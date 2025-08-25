@@ -1,54 +1,51 @@
-function [P_in, P_out, T_in, T_out, y_in, y_out] = get_bed_interface_props(y, bed_index, parm)
-% GET_BED_INTERFACE_PROPS   Returns inlet/outlet P, T, y for a given bed
-%
-%   [P_in, P_out, T_in, T_out, y_in, y_out] = get_bed_interface_props(y, bed_index, parm)
-%
-%   Inputs:
-%       y          : Full ODE state vector
-%       bed_index  : 1 or 2
-%       parm       : Parameter struct for the bed
-%
-%   Outputs:
-%       P_in, P_out    : Pressure at z = 0 and z = L
-%       T_in, T_out    : Temperature at z = 0 and z = L
-%       y_in, y_out    : Mole fractions (vector) at z = 0 and z = L
+function bc = get_bed_interface_props(Y, bed_index, sim)
+% GET_BED_INTERFACE_PROPS Extracts interface conditions for a given bed.
+% Returns a struct 'bc' with fields: P, T, y (all at inlet and outlet).
 
-NS = parm.NS;         % Number of spatial nodes
-N  = parm.N_gas;      % Number of gas species
-R  = parm.R;
+NS = sim.num_nodes;
+N  = sim.n_species;
+R  = sim.R;
 
-% Determine offset for current bed
-parm.varlen = parm.NS + parm.NS*(parm.N_gas - 1) + parm.NS + parm.NS * parm.N_gas;
-offset = (bed_index - 1) * parm.varlen;
+% Calculate offset for the bed in the full state vector
+n_per_bed = NS * (2 + N);
+offset = (bed_index - 1) * n_per_bed;
 
-% === Total gas concentration ===
-c_total = y(offset + 1 : offset + NS);  % mol/m³
+% --- Unpack total concentration ---
+idx_Ct = offset + (1:NS);
+Ct = Y(idx_Ct);
 
-% === Gas-phase concentrations (N-1 stored species) ===
-c_partial = reshape(y(offset + NS + 1 : offset + NS + NS*(N-1)), [NS, N-1]);  % mol/m³
+% --- Unpack partial concentrations ---
+idx_Ci = offset + NS + (1:NS*(N-1));
+Ci_partial = reshape(Y(idx_Ci), NS, N-1);
 
-% === Compute concentration of species N ===
-cN = c_total - sum(c_partial, 2);  % mol/m³
+% Infer the last species concentration
+Ci = zeros(NS, N);
+Ci(:,1:N-1) = Ci_partial;
+Ci(:,N) = Ct - sum(Ci_partial, 2);
 
-% === Corrected Full concentration matrix ===
-c_gas = zeros(NS, N);
-c_gas(:,1:N-1) = c_partial;     % stored species 2 to N
-c_gas(:,N)   = cN;            % inferred species 1
+% Compute mole fractions
+yi = Ci ./ Ct;
 
-% === Compute mole fractions ===
-y_full = c_gas ./ c_total;
+% Inlet/outlet fractions
+y_in  = yi(1, :)';
+y_out = yi(end, :)';
 
-% Extract inlet and outlet mole fractions
-y_in  = y_full(1, :).';
-y_out = y_full(end, :).';
+% --- Unpack temperature ---
+idx_T = offset + NS*N + (1:NS);
+T = Y(idx_T);
+T_in  = T(1);
+T_out = T(end);
 
-% === Extract temperature profile ===
-T_vector = y(offset + NS + NS*(N-1) + 1 : offset + NS + NS*(N-1) + NS);
-T_in  = T_vector(1);
-T_out = T_vector(end);
+% --- Compute pressures ---
+P_in  = Ct(1)  * R * T_in;
+P_out = Ct(end) * R * T_out;
 
-% === Compute pressures using ideal gas law ===
-P_in  = c_total(1)  * R * T_in;
-P_out = c_total(end) * R * T_out;
+% Return as structured BC
+bc.inlet.P = P_in;
+bc.inlet.T = T_in;
+bc.inlet.y = y_in;
 
+bc.outlet.P = P_out;
+bc.outlet.T = T_out;
+bc.outlet.y = y_out;
 end
