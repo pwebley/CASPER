@@ -1,15 +1,11 @@
 function run_casper_simulation
 % RUN_CASPER Run PSA simulation with multiple cycles and progress display.
 %
-% Usage: run_casper(5)  % Runs 5 cycles
-if nargin < 1
-    num_cycles = 1;
-end
 
 [sim, bed_states, tank_states] = createPSASimulation();
 num_cycles=sim.n_cycles; 
 
-% Flatten initial state into Y0
+% Build initial state  Y0
 Y0 = [];
 for b = 1:sim.num_beds
     bed = bed_states{b};
@@ -17,13 +13,12 @@ for b = 1:sim.num_beds
 end
 
 opts = odeset('RelTol', sim.RelTol, 'AbsTol', sim.AbsTol, ...
-    'MaxStep', sim.dt_max);
-
-% Optional: use OutputFcn for progress updates
-opts = odeset(opts, 'OutputFcn', @(t,y,flag) odeProgress(t,y,flag));
+    'MaxStep', sim.dt_max,'OutputFcn',@(t,y,flag) odeProgress(t,y,flag));
 
 T_all = [];
 Y_all = [];
+bed_states_all = cell(num_cycles, 1);  % Store final bed states per cycle
+tank_states_all = cell(num_cycles, 1); % (optional) for tanks too
 
 for cycle = 1:num_cycles
     fprintf('\n=== Beginning cycle %d of %d ===\n', cycle, num_cycles);
@@ -43,13 +38,15 @@ for cycle = 1:num_cycles
         Y_all = [Y_all; Yseg];
         Y0 = Yseg(end,:)';  % Update initial state for next step
     end
+    bed_states_all{cycle} = unpack_bed_state_vector(Y0, sim);
+    tank_states_all{cycle} = tank_states;  % If tanks are updated per step
+
 end
 
-% Save final state for restart
-bed_states_final = reshape(Y0, [], sim.num_beds);
-save('cycle_sim.mat', 'sim', 'bed_states_final', 'tank_states');
+save('cycle_sim.mat', 'sim', 'bed_states_all', 'tank_states_all');
 
-fprintf('\nSimulation complete! Final state saved to cycle_sim.mat\n');
+fprintf('\n✅ Simulation complete. Final state saved to cycle_sim.mat\n');
+
 
 % Example output: final concentration profile of Bed A
 Ct_end = Y0(1:sim.num_nodes);
