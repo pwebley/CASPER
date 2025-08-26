@@ -1,13 +1,13 @@
-function run_casper(num_cycles)
+function run_casper_simulation
 % RUN_CASPER Run PSA simulation with multiple cycles and progress display.
 %
 % Usage: run_casper(5)  % Runs 5 cycles
-
 if nargin < 1
     num_cycles = 1;
 end
 
 [sim, bed_states, tank_states] = createPSASimulation();
+num_cycles=sim.n_cycles; 
 
 % Flatten initial state into Y0
 Y0 = [];

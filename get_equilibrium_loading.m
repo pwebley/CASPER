@@ -1,10 +1,10 @@
 function q = get_equilibrium_loading(sim, adsorbent, P_partial, T)
     n = sim.n_species;
     q = zeros(1, n);
-    R = 8.314462618;
+    R = 8.314462618; % J/mol·K
     
-    model = adsorbent.isotherm_model;
-    params = adsorbent.isotherm_parameters;
+    model = adsorbent.isotherm_type;
+    params = adsorbent.isotherms;
     
     % Pre-calculate competitive terms if needed
     switch lower(model)
