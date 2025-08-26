@@ -1,13 +1,13 @@
 function bc = get_bed_interface_props(Y, bed_index, sim)
-% GET_BED_INTERFACE_PROPS Extracts interface conditions for a given bed.
-% Returns a struct 'bc' with fields: P, T, y (all at inlet and outlet).
+% GET_BED_INTERFACE_PROPS Extracts interface conditions at z=0 and z=L for a bed.
+% Returns a struct 'bc' with fields: z0 and zL, each with P, T, y.
 
 NS = sim.num_nodes;
 N  = sim.n_species;
 R  = sim.R;
 
 % Calculate offset for the bed in the full state vector
-n_per_bed = NS * (1+2*N);
+n_per_bed = NS * (1 + 2*N);
 offset = (bed_index - 1) * n_per_bed;
 
 % --- Unpack total concentration ---
@@ -26,26 +26,18 @@ Ci(:,N) = Ct - sum(Ci_partial, 2);
 % Compute mole fractions
 yi = Ci ./ Ct;
 
-% Inlet/outlet fractions
-y_in  = yi(1, :)';
-y_out = yi(end, :)';
-
 % --- Unpack temperature ---
-idx_T = offset + NS*N + (1:NS);
+idx_T = offset + NS + NS*(N-1) + (1:NS);
 T = Y(idx_T);
-T_in  = T(1);
-T_out = T(end);
 
-% --- Compute pressures ---
-P_in  = Ct(1)  * R * T_in;
-P_out = Ct(end) * R * T_out;
+% Interface values at z = 0
+bc.z0.P = Ct(1) * R * T(1);
+bc.z0.T = T(1);
+bc.z0.y = yi(1, :)';
 
-% Return as structured BC
-bc.inlet.P = P_in;
-bc.inlet.T = T_in;
-bc.inlet.y = y_in;
+% Interface values at z = L
+bc.zL.P = Ct(end) * R * T(end);
+bc.zL.T = T(end);
+bc.zL.y = yi(end, :)';
 
-bc.outlet.P = P_out;
-bc.outlet.T = T_out;
-bc.outlet.y = y_out;
 end

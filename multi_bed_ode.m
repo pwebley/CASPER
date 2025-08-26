@@ -3,7 +3,7 @@ function dYdt = multi_bed_ode(t, Y, sim, current_step)
 
 num_beds = sim.num_beds;
 nodes = sim.num_nodes;
-states_per_bed = nodes * (1+2*n_species);
+states_per_bed = nodes * (1+2*sim.n_species);
 
 dYdt = zeros(size(Y));
 

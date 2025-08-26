@@ -10,7 +10,7 @@ sim.num_beds = 2;
 sim.species_names = {'O2', 'N2'};
 sim.n_species = numel(sim.species_names);
 sim.species_index = containers.Map(sim.species_names, 1:sim.n_species);
-
+sim.R = 8.314462618;
 %% === Load Gas Properties ===
 load('gas_database.mat', 'gas_database');
 for i = 1:sim.n_species
@@ -20,6 +20,12 @@ for i = 1:sim.n_species
     else
         sim.gas(i) = gas_database(match);
     end
+end
+sim.visc_func = @(T) (1.8e-5) * (T / 300).^0.7;  % [Pa·s], Sutherland-like law
+% Extract molecular weights from gas properties
+sim.MW = zeros(sim.n_species, 1);
+for i = 1:sim.n_species
+    sim.MW(i) = sim.gas(i).MW;  % assumed to be in kg/mol
 end
 
 %% === Bed & Layer Configuration ===
@@ -52,6 +58,64 @@ for i = 1:sim.n_layers
     sim.layers(i).node_end = node_idx + sim.layers(i).num_nodes - 1;
     node_idx = sim.layers(i).node_end + 1;
 end
+
+%% Initialize grid
+fprintf('Initializing grid...\n');
+
+sim.z_nodes = zeros(sim.num_nodes, 1);
+sim.dz = zeros(sim.num_nodes, 1);
+sim.layer_id = zeros(sim.num_nodes, 1);
+
+% Construct the grid
+node_index = 1; current_z = 0;
+for layer_id = 1:sim.n_layers
+    L = sim.layers(layer_id).length;
+    N = sim.layers(layer_id).num_nodes;
+    dz = L / N;
+
+    for n = 1:N
+        sim.z_nodes(node_index) = current_z + (n - 0.5) * dz;
+        sim.dz(node_index) = dz;
+        sim.layer_id(node_index) = layer_id;
+        node_index = node_index + 1;
+    end
+
+    current_z = current_z + L;
+end
+
+sim.z_L = current_z;
+sim.A_bed = pi * (sim.bed_diameter / 2)^2;
+sim.node_volume = sim.A_bed * sim.dz;
+
+% Compute adsorbent mass
+sim.adsorbent_mass = zeros(sim.num_nodes, 1);
+for i = 1:sim.n_layers
+    nodes = sim.layers(i).node_start : sim.layers(i).node_end;
+    rho = sim.layers(i).properties.bed_density;
+
+    sim.adsorbent_mass(nodes) = rho .* sim.node_volume(nodes);
+end
+sim.particle_diameter = zeros(sim.num_nodes, 1);
+sim.epsilon = zeros(sim.num_nodes, 1);
+sim.rho_bed = zeros(sim.num_nodes, 1);
+sim.Cp_solid = zeros(sim.num_nodes, 1);  
+
+for i = 1:sim.n_layers
+    nodes = sim.layers(i).node_start : sim.layers(i).node_end;
+    
+    % Extract the adsorbent properties for this layer
+    props = sim.layers(i).properties;
+    sim.epsilon(nodes) = props.void_fraction;
+    sim.rho_bed(nodes) = props.bed_density;
+    sim.Cp_solid(nodes) = props.heat_capacity;
+    sim.particle_diameter(nodes) = props.particle_diameter;
+end
+ eps=sim.epsilon;
+ dp=sim.particle_diameter;
+ sim.Ergun_A_base = (150 * (1 - eps).^2) ./ (eps.^3 .* dp.^2);
+ sim.Ergun_B_base = (1.75 * (1 - eps)) ./ (eps.^3 .* dp);
+
+
 
 %% === Tank Definitions ===
 sim.tanks(1).name = 'Feed_Tank';
@@ -92,14 +156,14 @@ sim.step(i).BedA.z0.parameters = {struct('Fm', 0.016)}; %molar feed rate 0.016 m
 % z=L: Flow OUT. Destination is Product_Tank.
 sim.step(i).BedA.zL.destination = {"Product_Tank"};
 sim.step(i).BedA.zL.flow_law = {"valve"}; % Flow driven by P_BedA_zL - P_Product
-sim.step(i).BedA.zL.parameters = {struct('Cv', 0.001)};
+sim.step(i).BedA.zL.parameters = {struct('Cv', 0.001e-3)};
 
 % --- Bed B Configuration (State 3: u_z0 < 0, u_zL = 0) ---
 sim.step(i).BedB.state = 3;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedB.z0.destination = {"Vent_Tank"};
 sim.step(i).BedB.z0.flow_law = {"valve"}; % Flow driven by P_BedB_z0 - P_Vent
-sim.step(i).BedB.z0.parameters = {struct('Cv', 0.005)};
+sim.step(i).BedB.z0.parameters = {struct('Cv', 0.005e-3)};
 % z=L: No flow.
 sim.step(i).BedB.zL.flow_law = {"none"};
 

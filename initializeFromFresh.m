@@ -1,40 +1,7 @@
 function [sim, bed_states, tank_states] = initializeFromFresh(sim)
 %INITIALIZEFROMFRESH Initializes grid, bed, and tank states from scratch.
 
-fprintf('Initializing grid...\n');
 
-sim.z_nodes = zeros(sim.num_nodes, 1);
-sim.dz = zeros(sim.num_nodes, 1);
-sim.layer_id = zeros(sim.num_nodes, 1);
-
-% Construct the grid
-node_index = 1; current_z = 0;
-for layer_id = 1:sim.n_layers
-    L = sim.layers(layer_id).length;
-    N = sim.layers(layer_id).num_nodes;
-    dz = L / N;
-
-    for n = 1:N
-        sim.z_nodes(node_index) = current_z + (n - 0.5) * dz;
-        sim.dz(node_index) = dz;
-        sim.layer_id(node_index) = layer_id;
-        node_index = node_index + 1;
-    end
-
-    current_z = current_z + L;
-end
-
-sim.z_L = current_z;
-sim.A_bed = pi * (sim.bed_diameter / 2)^2;
-sim.node_volume = sim.A_bed * sim.dz;
-
-% Compute adsorbent mass
-sim.adsorbent_mass = zeros(sim.num_nodes, 1);
-for i = 1:sim.n_layers
-    nodes = sim.layers(i).node_start : sim.layers(i).node_end;
-    rho = sim.layers(i).properties.bed_density;
-    sim.adsorbent_mass(nodes) = rho .* sim.node_volume(nodes);
-end
 
 %% Bed State Initialization
 fprintf('Initializing bed states...\n');
