@@ -7,7 +7,7 @@ sim.n_cycles = 1;
 sim.cycle_time = 200;
 sim.num_beds = 2;
 
-sim.species_names = {'O2', 'CO2', 'N2'};
+sim.species_names = {'O2', 'N2'};
 sim.n_species = numel(sim.species_names);
 sim.species_index = containers.Map(sim.species_names, 1:sim.n_species);
 
@@ -23,11 +23,11 @@ for i = 1:sim.n_species
 end
 
 %% === Bed & Layer Configuration ===
-sim.bed_diameter = 0.041;
+sim.bed_diameter = 0.05;
 sim.n_layers = 1;
-sim.layers(1).length = 0.9;
+sim.layers(1).length = 1.0;
 sim.layers(1).num_nodes = 20;
-sim.layers(1).adsorbent_name = 'ActivatedCarbon_1';
+sim.layers(1).adsorbent_name = 'Zeolite5A_1';
 sim.bed_length = sum([sim.layers.length]);
 sim.num_nodes = sum([sim.layers.num_nodes]);
 
@@ -58,20 +58,20 @@ sim.tanks(1).name = 'Feed_Tank';
 sim.tanks(1).type = 'infinite';
 sim.tanks(1).P = 5e5;
 sim.tanks(1).T = 298.15;
-sim.tanks(1).y = [0.21, 0.0004, 0.7896];
+sim.tanks(1).y = [0.21, 0.7896];
 
 sim.tanks(2).name = 'Product_Tank';
 sim.tanks(2).type = 'finite';
 sim.tanks(2).volume = 10.0;
 sim.tanks(2).P = 1.5e5;
 sim.tanks(2).T = 298.15;
-sim.tanks(2).y = [1.0, 0.0, 0.0];
+sim.tanks(2).y = [1.0, 0.0];
 
 sim.tanks(3).name = 'Vent_Tank';
 sim.tanks(3).type = 'infinite';
 sim.tanks(3).P = 1e5;
 sim.tanks(3).T = 298.15;
-sim.tanks(3).y = [0.0, 1.0, 0.0];
+sim.tanks(3).y = [0.0,  0.0];
 
 %% === Restart Option ===
 sim.restart_from_file = false;
@@ -98,9 +98,9 @@ if sim.restart_from_file
 else
     % Assign default initial conditions
     for i = 1:sim.num_beds
-        sim.init_conditions{i}.P0 = 1.01e5 * ones(sim.num_nodes, 1);
+        sim.init_conditions{i}.P0 = 5.00e5 * ones(sim.num_nodes, 1);
         sim.init_conditions{i}.T0 = 298 * ones(sim.num_nodes, 1);
-        sim.init_conditions{i}.y0 = repmat([0.2, 0.00, 0.80], sim.num_nodes, 1);
+        sim.init_conditions{i}.y0 = repmat([1.0, 0.00], sim.num_nodes, 1);
     end
 
     [sim, bed_states, tank_states] = initializeFromFresh(sim);
