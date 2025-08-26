@@ -11,7 +11,7 @@ n_per_bed = nodes * (2 + n_species);
 dYdt = zeros(size(Y));
 
 % Compute boundary conditions for all beds
-flow_bc = flow_network_update(sim, Y, current_step);
+flow_bc = flow_network(sim, Y, current_step);
 
 for bed_idx = 1:num_beds
     start_idx = (bed_idx - 1)*n_per_bed + 1;

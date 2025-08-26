@@ -32,13 +32,13 @@ sim.node_volume = sim.A_bed * sim.dz;
 sim.adsorbent_mass = zeros(sim.num_nodes, 1);
 for i = 1:sim.n_layers
     nodes = sim.layers(i).node_start : sim.layers(i).node_end;
-    rho = sim.layers(i).properties.rho_solid;
+    rho = sim.layers(i).properties.bed_density;
     sim.adsorbent_mass(nodes) = rho .* sim.node_volume(nodes);
 end
 
 %% Bed State Initialization
 fprintf('Initializing bed states...\n');
-R = 8.314;
+R = 8.314462618; % J/mol·K
 bed_states = cell(sim.num_beds, 1);
 
 for bed_id = 1:sim.num_beds

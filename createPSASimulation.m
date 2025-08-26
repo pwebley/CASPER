@@ -32,7 +32,7 @@ sim.bed_length = sum([sim.layers.length]);
 sim.num_nodes = sum([sim.layers.num_nodes]);
 
 % Load adsorbents
-load('adsorbent_database_new.mat', 'adsorbent_database');
+load('adsorbent_database.mat', 'adsorbent_database');
 if iscell(adsorbent_database), adsorbent_database = [adsorbent_database{:}]; end
 
 for i = 1:sim.n_layers
@@ -241,7 +241,7 @@ sim.step(i).BedB.z0.flow_law = {"none"};
 % z=L: Flow OUT in +Z direction. Destination is Bed A's z=L.
 sim.step(i).BedB.zL.destination = {"BedA_zL"};
 sim.step(i).BedB.zL.flow_law = {"valve"}; % Flow driven by P_BedB_zL > P_BedA_zL
-sim.step(i).BedB.zL.parameters = {struct('Cv', 0.001)}; % Valve coefficient for equalization line
+sim.step(i).BedB.zL.parameters = {struct('Cv', 0.005)}; % Valve coefficient for equalization line
 
 % --- Bed A Configuration (State 8: u_z0 = 0, u_zL < 0) ---
 sim.step(i).BedA.state = 8;
