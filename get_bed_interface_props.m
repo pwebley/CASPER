@@ -7,7 +7,7 @@ N  = sim.n_species;
 R  = sim.R;
 
 % Calculate offset for the bed in the full state vector
-n_per_bed = NS * (2 + N);
+n_per_bed = NS * (1+2*N);
 offset = (bed_index - 1) * n_per_bed;
 
 % --- Unpack total concentration ---

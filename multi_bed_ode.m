@@ -1,28 +1,28 @@
 function dYdt = multi_bed_ode(t, Y, sim, current_step)
-% MULTI_BED_ODE system of ODEs for all beds in the PSA network.
+% MULTI_BED_ODE Compute the time derivatives for all beds simultaneously.
 
 num_beds = sim.num_beds;
 nodes = sim.num_nodes;
-n_species = sim.n_species;
-
-% States: Ct (nodes), Ci (nodes*(n_species-1)), T (nodes), qi (nodes*n_species)
-n_per_bed = nodes * (2 + n_species);
+states_per_bed = nodes * (1+2*n_species);
 
 dYdt = zeros(size(Y));
 
-% Compute boundary conditions for all beds
-flow_bc = flow_network(sim, Y, current_step);
+% Generate interface properties from state vector
+raw = cell(num_beds, 1);
+for b = 1:num_beds
+    raw{b} = get_bed_interface_props(Y, b, sim);
+end
 
-for bed_idx = 1:num_beds
-    start_idx = (bed_idx - 1)*n_per_bed + 1;
-    end_idx   = bed_idx * n_per_bed;
-    y_bed = Y(start_idx:end_idx);
+% Compute boundary conditions at z=0 and z=L
+[bc_z0, bc_zL] = flow_network(t, sim, raw, current_step);
 
-    inlet_bc = flow_bc(bed_idx).inlet;
-    outlet_bc = flow_bc(bed_idx).outlet;
+% Loop over beds
+for b = 1:num_beds
+    idx_start = (b-1)*states_per_bed + 1;
+    idx_end = b*states_per_bed;
+    y_bed = Y(idx_start:idx_end);
 
-    dy_bed = bed_ode(t, y_bed, sim, inlet_bc, outlet_bc, bed_idx);
-
-    dYdt(start_idx:end_idx) = dy_bed;
+    dy = bed_ode(t, y_bed, sim, bc_z0{b}, bc_zL{b}, b);
+    dYdt(idx_start:idx_end) = dy;
 end
 end
