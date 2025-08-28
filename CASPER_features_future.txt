@@ -1,0 +1,31 @@
+%% Features of CASPER to add
+1.  Higher order finite volume methods with flux limiters
+2.  Cyclic Steady State Acceleration
+3.  Add options for vacuum pumps, fans, feed compressors
+4.  Add output calculation of energy from machinery
+5.  Radial bed and square bed options
+6.  Costing calculations
+7.  Control loops to achieve specified conditionsnd tanks
+8.  Add lots of isotherm models
+9.  Add lots of isotherm data
+10. Add option for more rigorous kinetic models
+11. IAST options and more rigorous heat of adsorption options
+12. Models for tanks: isothermal, adiabatic
+13. Variable CV option
+14. Heating options for the bed (TSA)
+15. Possibilty for heat exchangers on streams
+16. Ablity to model monoliths, laminates, etc
+17. Void volumes at either end or both
+18. Output options - ability to track cycle by cycle behavior
+19. Ability for post processing without having to re-run the code
+20. Variable wall temperature and heat loss models for the wall
+21. Axial and thermal dispersion
+22. Side ports to input/take out streams in a bed
+23. Dual reflux options
+23. Add a second spatial dimension (radial)
+24. Correlations for mass transfer and heat trnser correlations
+25. Automatic termination of steady state when it has been achieved 
+26. Enthalpy profiles to track energy movement in the bed
+27. Extensive visual output
+28. Approch to CSTR in the tanks (completely mixed to PFR)
+29. Simple Input file for breakthrough analysis

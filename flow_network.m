@@ -39,56 +39,44 @@ bed_state = step_config.state;
 sign_correction = get_flow_sign(bed_state, pos);
 
 switch law
-    %% Case Valve: 
-    % We model flow through a valve using the Flow Controls Institute equation. We model 
-    % this as a check valve so reverse flow is not permitted 
-    case 'valve'  
-        if isfield(interface, 'source')
-            % --- Flow from source to bed ---
-            src_name = interface.source{1};
-            [Tsrc, ysrc, Psrc] = resolve_source_properties(src_name, raw, sim);
-            bc.T = Tsrc;
-            bc.y = ysrc;
+case 'valve'  
+    if isfield(interface, 'source')
+        % --- Flow from source to bed ---
+        src_name = interface.source{1};
+        [Tsrc, ysrc, Psrc] = resolve_source_properties(src_name, raw, sim);
+        bc.T = Tsrc;
+        bc.y = ysrc;
 
-            yi = ysrc(:);  % Use source composition
-            T_abs = Tsrc;  % Use source temperature
-            P1 = Psrc / 101325;      % Source (upstream) pressure [atm]
-            P2 = props.P / 101325;   % Bed (downstream) pressure [atm]
+        P1 = Psrc;
+        P2 = props.P;
+        T = Tsrc;
+        y = ysrc(:);
 
-        elseif isfield(interface, 'destination')
-            % --- Flow from bed to destination ---
-            dst_name = interface.destination{1};
-            [~, ~, Pdst] = resolve_source_properties(dst_name, raw, sim);
+    elseif isfield(interface, 'destination')
+        % --- Flow from bed to destination ---
+        dst_name = interface.destination{1};
+        [~, ~, Pdst] = resolve_source_properties(dst_name, raw, sim);
 
-            yi = props.y(:);       % Use bed interface composition
-            T_abs = props.T;       % Use bed temperature
-            P1 = props.P / 101325; % Bed (upstream) pressure [atm]
-            P2 = Pdst / 101325;    % Destination (downstream) pressure [atm]
+        P1 = props.P;
+        P2 = Pdst;
+        T = props.T;
+        y = props.y(:);
+        % bc.T and bc.y remain unchanged (taken from the bed)
+    else
+        error('Valve flow must define either a source or destination at %s', pos);
+    end
 
-            % bc.T and bc.y remain as bed properties (already assigned)
-        else
-            error('Valve flow must define either a source or destination at %s', pos);
-        end
+    % Compute valve flow in standard L/s
+    Q = valve_flow(P1, P2, T, y, sim, params.Cv);
 
-        % === Valve flow calculation ===
-        MW_species = sim.MW(:) / 1000;      % [kg/mol]
-        MW_mix = yi' * MW_species;          % Mixture MW [kg/mol]
-        G = MW_mix / 0.02897;               % Specific gravity
+    % Convert standard L/s to mol/s at STP (273 K, 101325 Pa)
+    Q_m3_s = Q / 1000;
+    n_dot = Q_m3_s * 101325 / (sim.R * 273);
 
-        if P2 >= 0.53 * P1
-            Q = 77.01 * params.Cv * sqrt((P1^2 - P2^2) / (G * T_abs));
-        else
-            Q = 77.01 * params.Cv * (P1 / sqrt(G * T_abs));
-        end
+    % Convert to velocity using local concentration at bed
+    C = props.P / (sim.R * props.T);  % mol/m³
+    bc.u = n_dot / (C * sim.A_bed);
 
-        % Convert standard L/s to mol/s at STP (273 K, 101325 Pa)
-        Q_m3_s = Q / 1000;
-        n_dot = Q_m3_s * 101325 / (sim.R * 273);
-
-        % Convert mol/s to superficial velocity (m/s)
-        C = props.P / (sim.R * props.T);  % Use bed gas concentration
-        bc.u = n_dot / (C * sim.A_bed);
-%% Case Molar: This is the case where the user specifies a fixed molar flow rate (mol/s)
 
     case 'molar_flow'
         C_local=props.P/(sim.R*props.T); 
@@ -105,6 +93,7 @@ switch law
             error('Molar flow requires either a source or destination at %s', pos);
         end
 
+
     case 'volume_flow'
         if isfield(interface, 'source')
             src_name = interface.source{1};
@@ -118,12 +107,24 @@ switch law
             error('Volume flow requires either a source or destination at %s', pos);
         end
 
+        
     case 'valve_split'
         dst_name = interface.destination{1};
-        [~, ~, Pdst] = resolve_source_properties(dst_name, raw, sim);
-        dP = props.P - Pdst;
-        Q_total = params.Cv * dP;
-        bc.u = (1 - params.split_frac) * Q_total;
+        [Tdst, ydst, Pdst] = resolve_source_properties(dst_name, raw, sim);
+
+        P1 = props.P;
+        P2 = Pdst;
+        T = props.T;
+        y = props.y(:);  % assuming flow is out of the bed
+
+        Q_total = valve_flow(P1, P2, T, y, sim, params.Cv);  % [L/s]
+        Q_split = (1 - params.split_frac) * Q_total;
+
+        % Convert to molar velocity
+        Q_m3_s = Q_split / 1000;
+        n_dot = Q_m3_s * 101325 / (sim.R * 273);  % mol/s at STP
+        C = props.P / (sim.R * props.T);          % concentration at bed
+        bc.u = n_dot / (C * sim.A_bed);
 
     case 'linked'
         bc.u = NaN;
