@@ -42,6 +42,7 @@ P = Ct .* R .* T;
 mu = sim.visc_func(T);
 M = yi * sim.MW(:)/1000.0;         % Mixture MW
 rho_g = Ct.* M ;            % Gas density
+cp_g = yi * sim.cp_g(:);
 
 %% === Compute Ergun velocity profile ===
 v = zeros(NS+1, 1);
@@ -104,8 +105,8 @@ for i = 1:N-1
     flux_i = v .* upwind(Ci_ext);
     
     % Mass balance
-    dCi_dt(:,i) = (1/eps) * (-(flux_i(2:end) - flux_i(1:end-1)) ./ dz ...
-                    - rho_b * dqi_dt(:,i));
+    dCi_dt(:,i) = (1./eps) .* (-(flux_i(2:end) - flux_i(1:end-1)) ./ dz ...
+                    - rho_b .* dqi_dt(:,i));
 end
 
 % === Total concentration balance ===
@@ -113,12 +114,11 @@ Ct_in  = inlet_bc.P / (R * inlet_bc.T);
 Ct_out = outlet_bc.P / (R * outlet_bc.T);
 Ct_ext = [Ct_in; Ct; Ct_out];
 flux_Ct = v .* upwind(Ct_ext);
-dCt_dt = (1/eps) * (-(flux_Ct(2:end) - flux_Ct(1:end-1)) ./ dz ...
-            - rho_b * sum(dqi_dt, 2));
+dCt_dt = (1./eps) .* (-(flux_Ct(2:end) - flux_Ct(1:end-1)) ./ dz ...
+            - rho_b .* sum(dqi_dt, 2));
 
 % === Energy balance ===
-cp_g = sim.cp_g;
-cp_s = sim.cp_s;
+cp_s = sim.Cp_solid;
 dH   = sim.dH;
 source = sim.heat_source;
 sink   = sim.heat_sink;
@@ -126,10 +126,11 @@ sink   = sim.heat_sink;
 T_ext = [T(1); T; T(end)];
 Ct_face = upwind(Ct_ext);
 T_face  = upwind(T_ext);
-enthalpy_flux = v .* Ct_face .* cp_g .* T_face;
+cp_g_face = upwind([cp_g(1); cp_g; cp_g(end)]);
+enthalpy_flux = v .* Ct_face .* cp_g_face .* T_face;
 convective_term = -(enthalpy_flux(2:end) - enthalpy_flux(1:end-1)) ./ dz;
 
-reaction_heat = -rho_b * sum(dqi_dt .* dH(:)', 2);
+reaction_heat = -rho_b .* sum(dqi_dt .* dH, 2);
 denominator = eps .* Ct .* cp_g + (1 - eps) .* rho_b .* sim.Cp_solid;
 
 dT_dt = (convective_term - R .* T .* dCt_dt + reaction_heat + source - sink) ./ denominator;

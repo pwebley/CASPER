@@ -24,8 +24,10 @@ end
 sim.visc_func = @(T) (1.8e-5) * (T / 300).^0.7;  % [Pa·s], Sutherland-like law
 % Extract molecular weights from gas properties
 sim.MW = zeros(sim.n_species, 1);
+sim.cp_g = zeros(sim.n_species, 1);
 for i = 1:sim.n_species
     sim.MW(i) = sim.gas(i).MW;  % assumed to be in kg/mol
+    sim.cp_g(i)=sim.gas(i).Cp; 
 end
 
 %% === Bed & Layer Configuration ===
@@ -58,7 +60,26 @@ for i = 1:sim.n_layers
     sim.layers(i).node_end = node_idx + sim.layers(i).num_nodes - 1;
     node_idx = sim.layers(i).node_end + 1;
 end
+% Initialize sim.k_LDF as [num_nodes x n_species] matrix
+sim.k_LDF = zeros(sim.num_nodes, sim.n_species);
 
+% Assign kinetics per node
+for i = 1:sim.n_layers
+    nodes = sim.layers(i).node_start : sim.layers(i).node_end;
+    kinetics = sim.layers(i).properties.kinetics;
+    
+    for j = 1:sim.n_species
+        gas_name = sim.species_names{j};
+        if isfield(kinetics, gas_name) && isfield(kinetics.(gas_name), 'k_LDF')
+            sim.k_LDF(nodes, j) = kinetics.(gas_name).k_LDF;
+        else
+            error('Missing k_LDF for species %s in layer %d', gas_name, i);
+        end
+    end
+end
+%% Thermal Model
+sim.heat_source=0.0;
+sim.heat_sink=0.0;
 %% Initialize grid
 fprintf('Initializing grid...\n');
 
@@ -99,6 +120,7 @@ sim.particle_diameter = zeros(sim.num_nodes, 1);
 sim.epsilon = zeros(sim.num_nodes, 1);
 sim.rho_bed = zeros(sim.num_nodes, 1);
 sim.Cp_solid = zeros(sim.num_nodes, 1);  
+sim.dH = zeros(sim.num_nodes,sim.n_species);
 
 for i = 1:sim.n_layers
     nodes = sim.layers(i).node_start : sim.layers(i).node_end;
@@ -109,6 +131,10 @@ for i = 1:sim.n_layers
     sim.rho_bed(nodes) = props.bed_density;
     sim.Cp_solid(nodes) = props.heat_capacity;
     sim.particle_diameter(nodes) = props.particle_diameter;
+    for s = 1:sim.n_species
+        species = sim.species_names{s};
+        sim.dH(nodes, s) = props.isotherms.(species).H_ads;  % [J/mol]
+    end
 end
  eps=sim.epsilon;
  dp=sim.particle_diameter;
