@@ -153,7 +153,7 @@ sim.tanks(1).y = [0.21, 0.79];
 sim.tanks(2).name = 'Product_Tank';
 sim.tanks(2).type = 'finite';
 sim.tanks(2).volume = 1.0;
-sim.tanks(2).P = 1.5e5;
+sim.tanks(2).P = 4.5e5;
 sim.tanks(2).T = 298.15;
 sim.tanks(2).y = [1.0, 0.0];
 
@@ -178,18 +178,18 @@ sim.step(i).BedA.state = 4;
 % z=0: Flow IN. Source is Feed_Tank.
 sim.step(i).BedA.z0.source = {"Feed_Tank"};
 sim.step(i).BedA.z0.flow_law = {"molar_flow"}; %flow is constant molar flow rate
-sim.step(i).BedA.z0.parameters = {struct('Fm', 0.016)}; %molar feed rate 0.016 mol/s
+sim.step(i).BedA.z0.parameters = {struct('Fm', 0.16)}; %molar feed rate 0.016 mol/s
 % z=L: Flow OUT. Destination is Product_Tank.
 sim.step(i).BedA.zL.destination = {"Product_Tank"};
 sim.step(i).BedA.zL.flow_law = {"valve"}; % Flow driven by P_BedA_zL - P_Product
-sim.step(i).BedA.zL.parameters = {struct('Cv', 0.001e-3)};
+sim.step(i).BedA.zL.parameters = {struct('Cv', 0.5)};
 
 % --- Bed B Configuration (State 3: u_z0 < 0, u_zL = 0) ---
 sim.step(i).BedB.state = 3;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedB.z0.destination = {"Vent_Tank"};
 sim.step(i).BedB.z0.flow_law = {"valve"}; % Flow driven by P_BedB_z0 - P_Vent
-sim.step(i).BedB.z0.parameters = {struct('Cv', 0.005e-3)};
+sim.step(i).BedB.z0.parameters = {struct('Cv', 0.5)};
 % z=L: No flow.
 sim.step(i).BedB.zL.flow_law = {"none"};
 
@@ -202,11 +202,11 @@ sim.step(i).BedA.state = 4;
 % z=0: Flow IN. Source is Feed_Tank.
 sim.step(i).BedA.z0.source = {"Feed_Tank"};
 sim.step(i).BedA.z0.flow_law = {"molar_flow"}; %flow is constant molar flow rate
-sim.step(i).BedA.z0.parameters = {struct('Fm', 0.016)}; %molar feed rate 0.016 mol/s
+sim.step(i).BedA.z0.parameters = {struct('Fm', 0.16)}; %molar feed rate 0.016 mol/s
 % z=L: Flow OUT. Destination is Product_Tank AND BedB_zL.
 sim.step(i).BedA.zL.destination = {"Product_Tank", "BedB_zL"};
 sim.step(i).BedA.zL.flow_law = {"valve_split"}; % ONE law for total flow
-sim.step(i).BedA.zL.parameters = {struct('Cv', 0.001, 'split_frac', 0.1)};
+sim.step(i).BedA.zL.parameters = {struct('Cv', 0.5, 'split_frac', 0.1)};
 % The solver will use P_BedA_zL and P_Product to get Q_total,
 % then split it.
 
@@ -215,7 +215,7 @@ sim.step(i).BedB.state = 2;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedB.z0.destination = {"Vent_Tank"};
 sim.step(i).BedB.z0.flow_law = {"valve"}; % Flow driven by P_BedB_z0 - P_Vent
-sim.step(i).BedB.z0.parameters = {struct('Cv', 0.005)};
+sim.step(i).BedB.z0.parameters = {struct('Cv', 0.5)};
 % z=L: Flow IN. Source is Bed A's zL.
 sim.step(i).BedB.zL.source = {"BedA_zL"};
 sim.step(i).BedB.zL.flow_law = {"linked"}; % Flow rate set by upstream split
@@ -232,7 +232,7 @@ sim.step(i).BedA.z0.flow_law = {"none"};
 % z=L: Flow OUT. Destination is Bed B's z=L.
 sim.step(i).BedA.zL.destination = {"BedB_zL"};
 sim.step(i).BedA.zL.flow_law = {"valve"}; % Flow driven by P_A_zL > P_B_zL
-sim.step(i).BedA.zL.parameters = {struct('Cv', 0.005)}; % Valve coefficient for equalization line
+sim.step(i).BedA.zL.parameters = {struct('Cv', 0.5)}; % Valve coefficient for equalization line
 % The solver will automatically use P at z=L for BedA and BedB.
 
 % --- Bed B Configuration (State 8: u_z0 = 0, u_zL < 0) ---
@@ -252,7 +252,7 @@ sim.step(i).BedA.state = 3;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedA.z0.destination = {"Vent_Tank"};
 sim.step(i).BedA.z0.flow_law = {"valve"}; % Flow driven by P_BedA_z0 - P_Vent
-sim.step(i).BedA.z0.parameters = {struct('Cv', 0.005)};
+sim.step(i).BedA.z0.parameters = {struct('Cv', 0.5)};
 % z=L: No flow.
 sim.step(i).BedA.zL.flow_law = {"none"};
 
@@ -263,7 +263,7 @@ sim.step(i).BedB.z0.flow_law = {"none"};
 % z=L: Flow IN. Source is Product_Tank.
 sim.step(i).BedB.zL.source = {"Product_Tank"};
 sim.step(i).BedB.zL.flow_law = {"valve"}; % Flow driven by P_Product - P_BedB_zL
-sim.step(i).BedB.zL.parameters = {struct('Cv', 0.001)};
+sim.step(i).BedB.zL.parameters = {struct('Cv', 0.5)};
 
 %----------------------------------------------------------------------
 % Step 5: Bed A in State 3 (Blowdown), Bed B in State 4 (Adsorption)
@@ -274,7 +274,7 @@ sim.step(i).BedA.state = 3;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedA.z0.destination = {"Vent_Tank"};
 sim.step(i).BedA.z0.flow_law = {"valve"}; % Flow driven by P_BedA_z0 - P_Vent
-sim.step(i).BedA.z0.parameters = {struct('Cv', 0.005)};
+sim.step(i).BedA.z0.parameters = {struct('Cv', 0.5)};
 % z=L: No flow.
 sim.step(i).BedA.zL.flow_law = {"none"};
 
@@ -283,11 +283,11 @@ sim.step(i).BedB.state = 4;
 % z=0: Flow IN. Source is Feed_Tank.
 sim.step(i).BedB.z0.source = {"Feed_Tank"};
 sim.step(i).BedB.z0.flow_law = {"molar_flow"}; % Flow driven by DP
-sim.step(i).BedB.z0.parameters = {struct('Fm', 0.016)};
+sim.step(i).BedB.z0.parameters = {struct('Fm', 0.16)};
 % z=L: Flow OUT. Destination is Product_Tank.
 sim.step(i).BedB.zL.destination = {"Product_Tank"};
 sim.step(i).BedB.zL.flow_law = {"valve"}; % Flow driven by P_BedB_zL - P_Product
-sim.step(i).BedB.zL.parameters = {struct('Cv', 0.001)};
+sim.step(i).BedB.zL.parameters = {struct('Cv', 0.5)};
 
 %----------------------------------------------------------------------
 % Step 6: Bed B in State 4 (Adsorption), Bed A in State 2 (Purge)
@@ -299,11 +299,11 @@ sim.step(i).BedB.state = 4;
 % z=0: Flow IN. Source is Feed_Tank.
 sim.step(i).BedB.z0.source = {"Feed_Tank"};
 sim.step(i).BedB.z0.flow_law = {"molar_flow"};
-sim.step(i).BedB.z0.parameters = {struct('Fm', 0.016)};
+sim.step(i).BedB.z0.parameters = {struct('Fm', 0.16)};
 % z=L: Flow OUT. Destination is Product_Tank AND BedA_zL.
 sim.step(i).BedB.zL.destination = {"Product_Tank", "BedA_zL"};
 sim.step(i).BedB.zL.flow_law = {"valve_split"}; % ONE law for total flow
-sim.step(i).BedB.zL.parameters = {struct('Cv', 0.001, 'split_frac', 0.1)};
+sim.step(i).BedB.zL.parameters = {struct('Cv', 0.5, 'split_frac', 0.1)};
 % The solver will use P_BedB_zL and P_Product to get Q_total,
 % then split it. 10% of flow is diverted to purge Bed A.
 
@@ -312,7 +312,7 @@ sim.step(i).BedA.state = 2;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedA.z0.destination = {"Vent_Tank"};
 sim.step(i).BedA.z0.flow_law = {"valve"}; % Flow driven by P_BedA_z0 - P_Vent
-sim.step(i).BedA.z0.parameters = {struct('Cv', 0.005)};
+sim.step(i).BedA.z0.parameters = {struct('Cv', 0.5)};
 % z=L: Flow IN. Source is Bed B's zL.
 sim.step(i).BedA.zL.source = {"BedB_zL"};
 sim.step(i).BedA.zL.flow_law = {"linked"}; % Flow rate set by upstream split
@@ -331,7 +331,7 @@ sim.step(i).BedB.z0.flow_law = {"none"};
 % z=L: Flow OUT in +Z direction. Destination is Bed A's z=L.
 sim.step(i).BedB.zL.destination = {"BedA_zL"};
 sim.step(i).BedB.zL.flow_law = {"valve"}; % Flow driven by P_BedB_zL > P_BedA_zL
-sim.step(i).BedB.zL.parameters = {struct('Cv', 0.005)}; % Valve coefficient for equalization line
+sim.step(i).BedB.zL.parameters = {struct('Cv', 0.5)}; % Valve coefficient for equalization line
 
 % --- Bed A Configuration (State 8: u_z0 = 0, u_zL < 0) ---
 sim.step(i).BedA.state = 8;
@@ -352,7 +352,7 @@ sim.step(i).BedB.state = 3;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedB.z0.destination = {"Vent_Tank"};
 sim.step(i).BedB.z0.flow_law = {"valve"}; % Flow driven by P_BedB_z0 - P_Vent
-sim.step(i).BedB.z0.parameters = {struct('Cv', 0.005)};
+sim.step(i).BedB.z0.parameters = {struct('Cv', 0.5)};
 % z=L: No flow.
 sim.step(i).BedB.zL.flow_law = {"none"};
 
@@ -363,13 +363,13 @@ sim.step(i).BedA.z0.flow_law = {"none"};
 % z=L: Flow IN. Source is Product_Tank.
 sim.step(i).BedA.zL.source = {"Product_Tank"};
 sim.step(i).BedA.zL.flow_law = {"valve"}; % Flow driven by P_Product - P_BedA_zL
-sim.step(i).BedA.zL.parameters = {struct('Cv', 0.001)};
+sim.step(i).BedA.zL.parameters = {struct('Cv', 0.5)};
 %% ------------------SOLVER OPTIONS-----------------------------------
 sim.ode_solver = 'ode15s';      % Solver choice
 sim.RelTol = 1e-6;              % Relative tolerance for ODE solver
-sim.AbsTol = 1e-8;              % Absolute tolerance for ODE solver
+sim.AbsTol = 1e-6;              % Absolute tolerance for ODE solver
 sim.dt_max = 0.5;               % Max time step [s]
-sim.dt_min = 1e-3;              % Min time step [s]
+sim.dt_min = 1e-5;              % Min time step [s]
 
 %% ------------------OUTPUT AND MONITORING----------------------------
 sim.save_interval = 1.0;        % Interval for saving results [s]

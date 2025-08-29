@@ -122,15 +122,18 @@ cp_s = sim.Cp_solid;
 dH   = sim.dH;
 source = sim.heat_source;
 sink   = sim.heat_sink;
+inlet_cp_g  = sum(inlet_bc.y(:) .* sim.cp_g(:));   % scalar [J/mol/K]
+outlet_cp_g = sum(outlet_bc.y(:) .* sim.cp_g(:));  % scalar [J/mol/K]
+cp_g_ext = [inlet_cp_g; cp_g; outlet_cp_g];
+T_ext = [inlet_bc.T; T; outlet_bc.T];
 
-T_ext = [T(1); T; T(end)];
 Ct_face = upwind(Ct_ext);
 T_face  = upwind(T_ext);
-cp_g_face = upwind([cp_g(1); cp_g; cp_g(end)]);
+cp_g_face = upwind(cp_g_ext);
 enthalpy_flux = v .* Ct_face .* cp_g_face .* T_face;
 convective_term = -(enthalpy_flux(2:end) - enthalpy_flux(1:end-1)) ./ dz;
 
-reaction_heat = -rho_b .* sum(dqi_dt .* dH, 2);
+reaction_heat = rho_b .* sum(dqi_dt .* dH, 2);
 denominator = eps .* Ct .* cp_g + (1 - eps) .* rho_b .* sim.Cp_solid;
 
 dT_dt = (convective_term - R .* T .* dCt_dt + reaction_heat + source - sink) ./ denominator;

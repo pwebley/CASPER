@@ -12,8 +12,15 @@ for b = 1:sim.num_beds
     Y0 = [Y0; bed.C; reshape(bed.C_species, [],1); bed.T; reshape(bed.q, [],1)];
 end
 
-opts = odeset('RelTol', sim.RelTol, 'AbsTol', sim.AbsTol, ...
-    'MaxStep', sim.dt_max,'OutputFcn',@(t,y,flag) odeProgress(t,y,flag));
+% opts = odeset('RelTol', sim.RelTol, ...
+%               'AbsTol', sim.AbsTol, ...
+%               'Stats', 'on', ...
+%               'MaxStep', sim.dt_max);
+opts = odeset('RelTol', sim.RelTol, ...
+              'AbsTol', sim.AbsTol, ...
+              'Stats', 'on', ...
+              'MaxStep', sim.dt_max, ...
+              'OutputFcn', @combinedOutputFcn);
 
 T_all = [];
 Y_all = [];
@@ -31,7 +38,7 @@ for cycle = 1:num_cycles
         fprintf('  Cycle %d — Step %d: t = %.2f to %.2f s\n', cycle, idx, t0, tf);
         
         % Integration across this step
-        [Tseg, Yseg] = ode15s(@(t,Y) multi_bed_ode(t, Y, sim, current_step), ...
+        [Tseg, Yseg] = ode23t(@(t,Y) multi_bed_ode(t, Y, sim, current_step), ...
                               [t0, tf], Y0, opts);
         
         T_all = [T_all; Tseg];
@@ -53,4 +60,12 @@ Ct_end = Y0(1:sim.num_nodes);
 figure; plot(sim.z_nodes, Ct_end, 'LineWidth', 2);
 xlabel('z (m)'); ylabel('Total Concentration (mol/m³)');
 title('Final Bed A Concentration Profile'); grid on;
+end
+
+
+function status = combinedOutputFcn(t, y, flag)
+    status1 = odeProgress(t, y, flag);
+    status2 = odeplot(t, y, flag);
+    status = status1;
+    status = status1 || status2;
 end

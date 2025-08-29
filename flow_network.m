@@ -83,7 +83,6 @@ case 'valve'
         if isfield(interface, 'source')
             src_name = interface.source{1};
             [Tsrc, ysrc, ~] = resolve_source_properties(src_name, raw, sim);
-            C = Psrc / (sim.R * Tsrc);
             bc.T = Tsrc;
             bc.y = ysrc;
             bc.u = params.Fm / (C_local * sim.A_bed);
@@ -109,25 +108,44 @@ case 'valve'
 
         
     case 'valve_split'
-        dst_name = interface.destination{1};
-        [Tdst, ydst, Pdst] = resolve_source_properties(dst_name, raw, sim);
+        % Extract split parameters
+        params = interface.parameters{1};  % this has fields Cv and split_frac
+        split_frac = params.split_frac;
+        Cv = params.Cv;
 
+        % Destination of split (first is tank, second is linked bed interface)
+        dst_list = interface.destination;
+
+        % Flow to tank (`destination{1}`)
+        dst1 = dst_list{1};
+        [~, y1, P2_1] = resolve_source_properties(dst1, raw, sim);  % ignore T
+        P2_1 = P2_1;  % pressure for tank branch
+
+        % Total flow calculation using bed properties as upstream (P1)
         P1 = props.P;
-        P2 = Pdst;
         T = props.T;
-        y = props.y(:);  % assuming flow is out of the bed
+        y = props.y(:);
 
-        Q_total = valve_flow(P1, P2, T, y, sim, params.Cv);  % [L/s]
-        Q_split = (1 - params.split_frac) * Q_total;
+        Q_total = valve_flow(P1, P2_1, T, y, sim, Cv);
 
-        % Convert to molar velocity
-        Q_m3_s = Q_split / 1000;
-        n_dot = Q_m3_s * 101325 / (sim.R * 273);  % mol/s at STP
-        C = props.P / (sim.R * props.T);          % concentration at bed
-        bc.u = n_dot / (C * sim.A_bed);
+        % Split proportions
+        Q_tank = (1 - split_frac) * Q_total;
+        Q_link = split_frac * Q_total;
+
+        % Convert Q_tank → velocity, assign to bc.u
+        bc.u = convert_Ls_to_velocity(Q_tank, sim, props);
+
+        % Temporarily store the linked branch flow in sim for the next bed to retrieve
+        sim.linked_flow.(bed_name).pos = pos;  % 'zL'
+        sim.linked_flow.(bed_name).flow = Q_link;
 
     case 'linked'
-        bc.u = NaN;
+        % Retrieve upstream linked flow
+        upstream = step_config.linked_from;
+        Q_link = sim.linked_flow.(upstream.bed_name).flow;
+
+        % Convert that to a velocity based on local bed properties
+        bc.u = convert_Ls_to_velocity(Q_link, sim, props);
 
     otherwise
         error('Unsupported flow law: %s', law);
@@ -177,4 +195,12 @@ switch pos
         error('Invalid position: %s. Must be ''z0'' or ''zL''.', pos);
 end
 sgn = sgn_map(state);
+end
+
+% -------------------------------------------------------------------------
+function vel = convert_Ls_to_velocity(Q_Ls, sim, props)
+    Q_m3_s = Q_Ls / 1000;
+    n_dot = Q_m3_s * 101325 / (sim.R * 273);
+    C = props.P / (sim.R * props.T);
+    vel = n_dot / (C * sim.A_bed);
 end
