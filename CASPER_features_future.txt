@@ -30,3 +30,4 @@
 28. Approch to CSTR in the tanks (completely mixed to PFR)
 29. Simple Input file for breakthrough analysis
 30. Options to run isothermal and without presure drop
+31. Gas properties functions of composition and temperature

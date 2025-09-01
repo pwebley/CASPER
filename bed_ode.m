@@ -15,11 +15,11 @@ function dy = bed_ode(t, y, sim, inlet_bc, outlet_bc, bed_index)
 %% === Unpack constants ===
 NS = sim.num_nodes;         % Number of spatial nodes
 N  = sim.n_species;         % Number of gas species
-R  = sim.R;                 % Gas constant
-eps = sim.epsilon;          % Bed porosity
-rho_b = sim.rho_bed;        % Bulk density of bed
-A = sim.A_bed;              % Cross-sectional area
-dz = sim.dz(:);             % Vector of node lengths
+R  = sim.R;                 % Gas constant: 8.3144 J/mol.K
+eps = sim.epsilon;          % Node-wise bed porosity
+rho_b = sim.rho_bed;        % Node-wise bulk density, kg/m3
+A = sim.A_bed;              % Constant cross-sectional area, m2
+dz = sim.dz(:);             % Local node spacing (depends on z), m
 
 %% === Index mapping ===
 id_Ct = 1:NS;
@@ -28,42 +28,40 @@ id_T  = NS*N + (1:NS);
 id_qi = reshape(NS*(N+1) + (1:NS*N), NS, N);
 
 %% === Unpack state variables ===
-Ct = max(y(id_Ct), 1e-12);  % Total concentration
-Ci = zeros(NS, N);
-Ci(:, 1:N-1) = y(id_Ci);    % Explicit species
+Ct = max(y(id_Ct), 1e-12);  % Total concentration, kept positive
+Ci = zeros(NS, N);          % Initialize Ci
+Ci(:, 1:N-1) = y(id_Ci);    % Explicit species 1 to N-1
 Ci(:, N) = Ct - sum(Ci(:, 1:N-1), 2);  % Balance last species
-Ci = max(Ci, 1e-12);        % Avoid division by zero
-T = max(y(id_T), 1e-6);     % Temperature
+Ci = max(Ci, 1e-12);        % Species concentration, kept positive
+T = max(y(id_T), 1e-6);     % Temperature, kept positive
 qi = y(id_qi);              % Adsorbed loadings
 
 %% === Mixture properties ===
-yi = Ci ./ Ct;
-P = Ct .* R .* T;
-mu = sim.visc_func(T);
-M = yi * sim.MW(:)/1000.0;         % Mixture MW
-rho_g = Ct.* M ;            % Gas density
-cp_g = yi * sim.cp_g(:);
+yi = Ci ./ Ct;              % Vector of mole fractions, N columns
+P = Ct .* R .* T;           % Vector of pressure, Pa
+mu = sim.visc_func(T);      % Vector of viscosity, Pa.s
+M = yi * sim.MW(:)/1000.0;  % Vector of mixture MW, kg/mol
+rho_g = Ct.* M ;            % Vector of Gas density, kg/m3
+cp_g = yi * sim.cp_g(:);    % Vector of gas heat capacity, J/mol.K
 
 %% === Compute Ergun velocity profile ===
 v = zeros(NS+1, 1);
 for s = 2:NS
     % Average properties at face between node s-1 and s
     mu_face     = 0.5 * (mu(s-1) + mu(s));
-    eps_face    = 0.5 * (eps(s-1) + eps(s));
-    dp_face     = 0.5 * (sim.particle_diameter(s-1) + sim.particle_diameter(s));
     rho_face    = 0.5 * (rho_g(s-1) + rho_g(s));
     dz_face     = 0.5 * (dz(s-1) + dz(s));
 
-    dP = P(s-1) - P(s);  % Pressure drop across face
+    dP = P(s-1) - P(s);  % Pressure drop across face: positive means flow in +ve direction
+    
 
     % Compute Ergun coefficients
-    A = (150 * mu_face * (1 - eps_face)^2) / (eps_face^3 * dp_face^2);
-    B = (1.75 * rho_face * (1 - eps_face)) / (eps_face^3 * dp_face);
+    A = sim.Ergun_A_face(s) * mu_face ;
+    B = sim.Ergun_B_face(s) * rho_face ;
 
     RHS = abs(dP) / dz_face;
 
     % Solve quadratic for v: A*v + B*v^2 = RHS
-    % v = (-A + sqrt(A^2 + 4*B*RHS)) / (2*B)
     v_mag = (-A + sqrt(A^2 + 4 * B * RHS)) / (2 * B);
 
     % Assign sign based on pressure direction

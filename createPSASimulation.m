@@ -25,6 +25,7 @@ sim.visc_func = @(T) (1.8e-5) * (T / 300).^0.7;  % [Pa·s], Sutherland-like law
 % Extract molecular weights from gas properties
 sim.MW = zeros(sim.n_species, 1);
 sim.cp_g = zeros(sim.n_species, 1);
+
 for i = 1:sim.n_species
     sim.MW(i) = sim.gas(i).MW;  % assumed to be in kg/mol
     sim.cp_g(i)=sim.gas(i).Cp; 
@@ -35,6 +36,9 @@ sim.bed_diameter = 0.05;
 sim.n_layers = 1;
 sim.layers(1).length = 1.0;
 sim.layers(1).num_nodes = 20;
+sim.Ergun_A_face = ones(sim.layers(1).num_nodes+1,1);
+sim.Ergun_B_face = ones(sim.layers(1).num_nodes+1,1);
+
 sim.layers(1).adsorbent_name = 'Zeolite5A_1';
 sim.bed_length = sum([sim.layers.length]);
 sim.num_nodes = sum([sim.layers.num_nodes]);
@@ -138,8 +142,14 @@ for i = 1:sim.n_layers
 end
  eps=sim.epsilon;
  dp=sim.particle_diameter;
- sim.Ergun_A_base = (150 * (1 - eps).^2) ./ (eps.^3 .* dp.^2);
- sim.Ergun_B_base = (1.75 * (1 - eps)) ./ (eps.^3 .* dp);
+ for f = 2:sim.num_nodes
+    eps_face = 0.5 * (eps(f-1) + eps(f));
+    dp_face  = 0.5 * (dp(f-1) + dp(f));
+    A_face(f) = (150 * (1 - eps_face)^2) / (eps_face^3 * dp_face^2);
+    B_face(f) = (1.75 * (1 - eps_face))   / (eps_face^3 * dp_face);
+ end
+ sim.Ergun_A_face = A_face;
+ sim.Ergun_B_face = B_face;
 
 
 

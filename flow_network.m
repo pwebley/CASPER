@@ -9,13 +9,13 @@ for b = 1:num_beds
     bed_name = sprintf('Bed%c', 'A' + b - 1);
     step_config = current_step.(bed_name);
 
-    bc_z0{b} = compute_boundary_condition_z('z0', raw, b, sim, step_config);
-    bc_zL{b} = compute_boundary_condition_z('zL', raw, b, sim, step_config);
+    bc_z0{b} = compute_boundary_condition_z('z0', raw, b, sim, step_config,bed_name);
+    bc_zL{b} = compute_boundary_condition_z('zL', raw, b, sim, step_config,bed_name);
 end
 end
 
 % -------------------------------------------------------------------------
-function bc = compute_boundary_condition_z(pos, raw, bed_id, sim, step_config)
+function bc = compute_boundary_condition_z(pos, raw, bed_id, sim, step_config,bed_name)
 interface = step_config.(pos);
 props = raw{bed_id}.(pos);
 
