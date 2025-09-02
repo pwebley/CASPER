@@ -5,13 +5,33 @@ num_beds = sim.num_beds;
 bc_z0 = cell(num_beds, 1);
 bc_zL = cell(num_beds, 1);
 
+% === Pass 1: Process destinations first (defining flows) ===
 for b = 1:num_beds
     bed_name = sprintf('Bed%c', 'A' + b - 1);
     step_config = current_step.(bed_name);
-
-    bc_z0{b} = compute_boundary_condition_z('z0', raw, b, sim, step_config,bed_name);
-    bc_zL{b} = compute_boundary_condition_z('zL', raw, b, sim, step_config,bed_name);
+    
+    if isfield(step_config.z0, 'destination')
+        bc_z0{b} = compute_boundary_condition_z('z0', raw, b, sim, step_config, bed_name);
+    end
+    if isfield(step_config.zL, 'destination')
+        bc_zL{b} = compute_boundary_condition_z('zL', raw, b, sim, step_config, bed_name);
+    end
 end
+
+% === Pass 2: Process sources (read from linked flows) ===
+for b = 1:num_beds
+    bed_name = sprintf('Bed%c', 'A' + b - 1);
+    step_config = current_step.(bed_name);
+    
+    if isempty(bc_z0{b})  % not already set
+        bc_z0{b} = compute_boundary_condition_z('z0', raw, b, sim, step_config, bed_name);
+    end
+    if isempty(bc_zL{b})  % not already set
+        bc_zL{b} = compute_boundary_condition_z('zL', raw, b, sim, step_config, bed_name);
+    end
+end
+
+
 end
 
 % -------------------------------------------------------------------------
@@ -19,7 +39,8 @@ function bc = compute_boundary_condition_z(pos, raw, bed_id, sim, step_config,be
 interface = step_config.(pos);
 props = raw{bed_id}.(pos);
 
-% Default: use local bed values
+% Default: use local bed values at z=0 or z=L (first or last node) and sets
+% u=0. This is the case when no flow law is defined
 bc.P = props.P;
 bc.T = props.T;
 bc.y = props.y;
@@ -142,12 +163,15 @@ case 'valve'
     case 'linked'
         % Retrieve upstream linked flow
         upstream = step_config.linked_from;
+        upstream_props = resolve_source_properties(upstream.bed_name, raw, sim);
         Q_link = sim.linked_flow.(upstream.bed_name).flow;
 
-        % Convert that to a velocity based on local bed properties
-        bc.u = convert_Ls_to_velocity(Q_link, sim, props);
+        % Use upstream gas conditions
+        bc.T = upstream_props.T;
+        bc.y = upstream_props.y;
 
-    otherwise
+        % Convert flow to velocity using local (downstream) bed conditions
+        bc.u = convert_Ls_to_velocity(Q_link, sim, props);    otherwise
         error('Unsupported flow law: %s', law);
 end
 

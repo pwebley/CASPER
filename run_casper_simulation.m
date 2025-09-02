@@ -3,6 +3,21 @@ function run_casper_simulation
 %
 
 [sim, bed_states, tank_states] = createPSASimulation();
+for b = 1:sim.num_beds
+    sim.diagnostics(b).time = [];
+    sim.diagnostics(b).Ct_1 = [];
+    sim.diagnostics(b).Ct_N = [];
+    sim.diagnostics(b).y1_1 = [];
+    sim.diagnostics(b).y1_N = [];
+    sim.diagnostics(b).P_1 = [];
+    sim.diagnostics(b).q1_1 = [];
+    sim.diagnostics(b).q1_N = [];
+    sim.diagnostics(b).q2_1 = [];
+    sim.diagnostics(b).q2_N = [];
+    sim.diagnostics(b).T_1 = [];
+    sim.diagnostics(b).T_N = [];
+end
+
 num_cycles=sim.n_cycles; 
 
 % Build initial state  Y0
@@ -44,6 +59,9 @@ for cycle = 1:num_cycles
         T_all = [T_all; Tseg];
         Y_all = [Y_all; Yseg];
         Y0 = Yseg(end,:)';  % Update initial state for next step
+        plot_diagnostics(sim);
+        pause;
+
     end
     bed_states_all{cycle} = unpack_bed_state_vector(Y0, sim);
     tank_states_all{cycle} = tank_states;  % If tanks are updated per step
