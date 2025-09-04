@@ -188,18 +188,18 @@ sim.step(i).BedA.state = 4;
 % z=0: Flow IN. Source is Feed_Tank.
 sim.step(i).BedA.z0.source = {"Feed_Tank"};
 sim.step(i).BedA.z0.flow_law = {"molar_flow"}; %flow is constant molar flow rate
-sim.step(i).BedA.z0.parameters = {struct('Fm', 0.16)}; %molar feed rate 0.016 mol/s
+sim.step(i).BedA.z0.parameters = {struct('Fm', 0.03)}; %molar feed rate 0.016 mol/s
 % z=L: Flow OUT. Destination is Product_Tank.
 sim.step(i).BedA.zL.destination = {"Product_Tank"};
 sim.step(i).BedA.zL.flow_law = {"valve"}; % Flow driven by P_BedA_zL - P_Product
-sim.step(i).BedA.zL.parameters = {struct('Cv', 0.5)};
+sim.step(i).BedA.zL.parameters = {struct('Cv', 0.1)};
 
 % --- Bed B Configuration (State 3: u_z0 < 0, u_zL = 0) ---
 sim.step(i).BedB.state = 3;
 % z=0: Flow OUT. Destination is Vent_Tank.
 sim.step(i).BedB.z0.destination = {"Vent_Tank"};
 sim.step(i).BedB.z0.flow_law = {"valve"}; % Flow driven by P_BedB_z0 - P_Vent
-sim.step(i).BedB.z0.parameters = {struct('Cv', 0.5)};
+sim.step(i).BedB.z0.parameters = {struct('Cv', 0.1)};
 % z=L: No flow.
 sim.step(i).BedB.zL.flow_law = {"none"};
 
@@ -212,11 +212,11 @@ sim.step(i).BedA.state = 4;
 % z=0: Flow IN. Source is Feed_Tank.
 sim.step(i).BedA.z0.source = {"Feed_Tank"};
 sim.step(i).BedA.z0.flow_law = {"molar_flow"}; %flow is constant molar flow rate
-sim.step(i).BedA.z0.parameters = {struct('Fm', 0.16)}; %molar feed rate 0.016 mol/s
+sim.step(i).BedA.z0.parameters = {struct('Fm', 0.03)}; %molar feed rate 0.016 mol/s
 % z=L: Flow OUT. Destination is Product_Tank AND BedB_zL.
 sim.step(i).BedA.zL.destination = {"Product_Tank", "BedB_zL"};
 sim.step(i).BedA.zL.flow_law = {"valve_split"}; % ONE law for total flow
-sim.step(i).BedA.zL.parameters = {struct('Cv', 0.5, 'split_frac', 0.1)};
+sim.step(i).BedA.zL.parameters = {struct('Cv', 0.1, 'split_frac', 0.1)};
 % The solver will use P_BedA_zL and P_Product to get Q_total,
 % then split it.
 
@@ -293,7 +293,7 @@ sim.step(i).BedB.state = 4;
 % z=0: Flow IN. Source is Feed_Tank.
 sim.step(i).BedB.z0.source = {"Feed_Tank"};
 sim.step(i).BedB.z0.flow_law = {"molar_flow"}; % Flow driven by DP
-sim.step(i).BedB.z0.parameters = {struct('Fm', 0.16)};
+sim.step(i).BedB.z0.parameters = {struct('Fm', 0.08)};
 % z=L: Flow OUT. Destination is Product_Tank.
 sim.step(i).BedB.zL.destination = {"Product_Tank"};
 sim.step(i).BedB.zL.flow_law = {"valve"}; % Flow driven by P_BedB_zL - P_Product

@@ -1,4 +1,3 @@
-
 function plot_diagnostics(sim, Y)
 % Plot diagnostics directly from the current state vector Y
 % Shows per-bed: P, T, y_j, and q_j (plus q_total).

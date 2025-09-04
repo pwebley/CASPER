@@ -154,7 +154,7 @@ case 'valve'
         Q_link = split_frac * Q_total;
 
         % Convert Q_tank → velocity, assign to bc.u
-        bc.u = convert_Ls_to_velocity(Q_tank, sim, props);
+        bc.u = convert_Ls_to_velocity(Q_total, sim, props);
 
         % Temporarily store the linked branch flow in sim for the next bed to retrieve
         sim.linked_flow.(bed_name).pos = pos;  % 'zL'

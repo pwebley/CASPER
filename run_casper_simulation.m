@@ -43,7 +43,7 @@ for cycle = 1:num_cycles
         fprintf('  Cycle %d — Step %d: t = %.2f to %.2f s\n', cycle, idx, t0, tf);
         
         % Integration across this step
-        [Tseg, Yseg] = ode23t(@(t,Y) multi_bed_ode(t, Y, sim, current_step), ...
+        [Tseg, Yseg] = ode15s(@(t,Y) multi_bed_ode(t, Y, sim, current_step), ...
                               [t0, tf], Y0, opts);
         
         % T_all = [T_all; Tseg];
