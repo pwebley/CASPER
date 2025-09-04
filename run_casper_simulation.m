@@ -4,18 +4,8 @@ function run_casper_simulation
 
 [sim, bed_states, tank_states] = createPSASimulation();
 for b = 1:sim.num_beds
-    sim.diagnostics(b).time = [];
-    sim.diagnostics(b).Ct_1 = [];
-    sim.diagnostics(b).Ct_N = [];
-    sim.diagnostics(b).y1_1 = [];
-    sim.diagnostics(b).y1_N = [];
-    sim.diagnostics(b).P_1 = [];
-    sim.diagnostics(b).q1_1 = [];
-    sim.diagnostics(b).q1_N = [];
-    sim.diagnostics(b).q2_1 = [];
-    sim.diagnostics(b).q2_N = [];
-    sim.diagnostics(b).T_1 = [];
-    sim.diagnostics(b).T_N = [];
+    sim.diagnostics(b) = struct( ...
+        'time',[], 'Pin',[], 'Pout',[], 'y1_in',[], 'y1_out',[], 'u_in',[], 'u_out',[]);
 end
 
 num_cycles=sim.n_cycles; 
@@ -56,11 +46,23 @@ for cycle = 1:num_cycles
         [Tseg, Yseg] = ode23t(@(t,Y) multi_bed_ode(t, Y, sim, current_step), ...
                               [t0, tf], Y0, opts);
         
-        T_all = [T_all; Tseg];
-        Y_all = [Y_all; Yseg];
+        % T_all = [T_all; Tseg];
+        % Y_all = [Y_all; Yseg];
         Y0 = Yseg(end,:)';  % Update initial state for next step
-        plot_diagnostics(sim);
-        pause;
+        % Boundary-only logging (cheap)
+        beds = unpack_bed_state_vector(Y0, sim);
+        for b = 1:sim.num_beds
+            P = beds{b}.C .* sim.R .* beds{b}.T;
+            sim.diagnostics(b).time(end+1)  = tf;
+            sim.diagnostics(b).Pin(end+1)   = P(1);
+            sim.diagnostics(b).Pout(end+1)  = P(end);
+            sim.diagnostics(b).y1_in(end+1) = beds{b}.y(1,1);
+            sim.diagnostics(b).y1_out(end+1)= beds{b}.y(end,1);
+        end
+
+            plot_diagnostics(sim);    % keep this lightweight
+            drawnow limitrate
+        end
 
     end
     bed_states_all{cycle} = unpack_bed_state_vector(Y0, sim);
