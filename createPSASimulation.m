@@ -174,7 +174,7 @@ sim.tanks(3).T = 298.15;
 sim.tanks(3).y = [0.0,  1.0];
 %% === CYCLE DEFINITION ===
 % Define the duration of each step in the cycle
-sim.step_times = [0, 60, 80, 85, 100, 160, 180, 185, 200]; % 8 steps
+sim.step_times = [0, 40, 55, 60, 75, 115, 130, 135, 150]; % 8 steps
 
 % Pre-allocate a structure array for steps
 sim.step(1:8) = struct(); % For an 8-step cycle

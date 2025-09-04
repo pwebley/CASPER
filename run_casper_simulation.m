@@ -60,7 +60,7 @@ for cycle = 1:num_cycles
             sim.diagnostics(b).y1_out(end+1)= beds{b}.y(end,1);
         end
 
-            plot_diagnostics(sim);    % keep this lightweight
+            plot_diagnostics(sim, Y0);    % keep this lightweight
             drawnow limitrate
         end
 
@@ -68,7 +68,7 @@ for cycle = 1:num_cycles
     bed_states_all{cycle} = unpack_bed_state_vector(Y0, sim);
     tank_states_all{cycle} = tank_states;  % If tanks are updated per step
 
-end
+
 
 save('cycle_sim.mat', 'sim', 'bed_states_all', 'tank_states_all');
 
