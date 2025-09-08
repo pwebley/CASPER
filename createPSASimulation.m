@@ -392,35 +392,55 @@ sim.output.plot_profiles = true;
 sim.output.report_recovery = true;
 
 %% === Restart Option ===
-sim.restart_from_file = false;
+sim.restart_from_file = true;
 sim.restart_file = 'cycle_sim.mat';
 
 if sim.restart_from_file
     fprintf('Loading initial state from %s...\n', sim.restart_file);
     data = load(sim.restart_file);
 
-    if isfield(data, 'bed_states')
-        bed_states = data.bed_states;
+    % --- Beds ---
+    if isfield(data,'bed_states')
+        bed_states = data.bed_states;                      % exact match
+    elseif isfield(data,'bed_states_all') && ~isempty(data.bed_states_all)
+        % take the last non-empty entry
+        bs = data.bed_states_all;
+        last = find(~cellfun(@isempty, bs), 1, 'last');
+        if ~isempty(last)
+            bed_states = bs{last};
+        else
+            error('Restart file has bed_states_all but entries are empty.');
+        end
     else
-        error('Restart file missing bed_states.');
+        error('Restart file missing bed_states / bed_states_all.');
     end
 
-    if isfield(data, 'tank_states')
+    % --- Tanks ---
+    if isfield(data,'tank_states')
         tank_states = data.tank_states;
+    elseif isfield(data,'tank_states_all') && ~isempty(data.tank_states_all)
+        ts = data.tank_states_all;
+        last = find(~cellfun(@isempty, ts), 1, 'last');
+        if ~isempty(last)
+            tank_states = ts{last};
+        else
+            warning('Restart file tank_states_all entries are empty. Reinitializing tanks...');
+            tank_states = initializeTankStates(sim);
+        end
     else
-        warning('Restart file missing tank_states. Reinitializing tanks...');
+        warning('Restart file missing tank_states / tank_states_all. Reinitializing tanks...');
         tank_states = initializeTankStates(sim);
     end
 
     fprintf('Restart loaded.\n');
+
 else
-    % Assign default initial conditions
+    % fresh init
     for i = 1:sim.num_beds
         sim.init_conditions{i}.P0 = 5.00e5 * ones(sim.num_nodes, 1);
         sim.init_conditions{i}.T0 = 298 * ones(sim.num_nodes, 1);
         sim.init_conditions{i}.y0 = repmat([1.0, 0.00], sim.num_nodes, 1);
     end
-
     [sim, bed_states, tank_states] = initializeFromFresh(sim);
 end
 

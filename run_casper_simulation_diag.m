@@ -3,7 +3,7 @@ function run_casper_simulation_diag
 % RUN_CASPER_SIMULATION_DIAG
 % Drop-in driver that adds robust per-step diagnostics and printing.
 %
-% It uses your existing createPSASimulation, flow_network, get_bed_interface_props,
+% It uses the existing createPSASimulation, flow_network, get_bed_interface_props,
 % bed_ode, and unpack_bed_state_vector functions.
 %
 % Usage: run_casper_simulation_diag

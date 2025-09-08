@@ -51,8 +51,8 @@ for cycle = 1:num_cycles
         [Tseg, Yseg] = ode15s(@(t,Y) multi_bed_ode(t, Y, sim, current_step), ...
                               [t0, tf], Y0, opts);
         
-        % T_all = [T_all; Tseg];
-        % Y_all = [Y_all; Yseg];
+         T_all = [T_all; Tseg];
+         Y_all = [Y_all; Yseg];
         Y0 = Yseg(end,:)';  % Update initial state for next step
         % Boundary-only logging (cheap)
         beds = unpack_bed_state_vector(Y0, sim);
@@ -75,7 +75,7 @@ for cycle = 1:num_cycles
         end
 
     % ---- End of cycle: print cycle totals (beds + tanks) ----
-    print_cycle_totals(sim, cycle, bed_cycle, tank_cycle);
+    % print_cycle_totals(sim, cycle, bed_cycle, tank_cycle);
 
     end
     bed_states_all{cycle} = unpack_bed_state_vector(Y0, sim);
@@ -89,10 +89,10 @@ fprintf('\n✅ Simulation complete. Final state saved to cycle_sim.mat\n');
 
 
 % Example output: final concentration profile of Bed A
-Ct_end = Y0(1:sim.num_nodes);
-figure; plot(sim.z_nodes, Ct_end, 'LineWidth', 2);
-xlabel('z (m)'); ylabel('Total Concentration (mol/m³)');
-title('Final Bed A Concentration Profile'); grid on;
+% Ct_end = Y0(1:sim.num_nodes);
+% figure; plot(sim.z_nodes, Ct_end, 'LineWidth', 2);
+% xlabel('z (m)'); ylabel('Total Concentration (mol/m³)');
+% title('Final Bed A Concentration Profile'); grid on;
 end
 
 
