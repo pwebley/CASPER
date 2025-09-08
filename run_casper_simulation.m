@@ -1,60 +1,78 @@
-function run_casper_simulation
-% RUN_CASPER Run PSA simulation with multiple cycles and progress display.
+function run_casper_simulation(run_name)
+% RUN_CASPER_SIMULATION  PSA simulation with per-step reporting + logging.
 %
-tic;
-[sim, bed_states, tank_states] = createPSASimulation();
-for b = 1:sim.num_beds
-    sim.diagnostics(b) = struct( ...
-        'time',[], 'Pin',[], 'Pout',[], 'y1_in',[], 'y1_out',[], 'u_in',[], 'u_out',[]);
+% Usage:
+%   run_casper_simulation                % auto run name (timestamp)
+%   run_casper_simulation('baseline_A')  % custom run name
+%
+% Produces a self-contained results file:
+%   casper_run_<run_name>__YYYYMMDD_HHMMSS.mat
+%
+% Requires on path:
+%   createPSASimulation, multi_bed_ode, unpack_bed_state_vector,
+%   flow_network, get_bed_interface_props, integrate_step_flows_signed,
+%   (and your other CASPER functions)
+
+if nargin < 1 || isempty(run_name)
+    run_name = 'run';
 end
 
-num_cycles=sim.n_cycles; 
+tic;
+[sim, bed_states, tank_states] = createPSASimulation();
 
-% Build initial state  Y0
+% light diagnostics (unchanged)
+for b = 1:sim.num_beds
+    sim.diagnostics(b) = struct('time',[],'Pin',[],'Pout',[], ...
+        'y1_in',[],'y1_out',[],'u_in',[],'u_out',[]);
+end
+
+num_cycles = sim.n_cycles;
+
+% Build initial state Y0
 Y0 = [];
 for b = 1:sim.num_beds
     bed = bed_states{b};
-    Y0 = [Y0; bed.C; reshape(bed.C_species, [],1); bed.T; reshape(bed.q, [],1)];
+    Y0 = [Y0; bed.C; reshape(bed.C_species, [], 1); bed.T; reshape(bed.q, [], 1)];
 end
 
-opts = odeset('RelTol', sim.RelTol, ...
-              'AbsTol', sim.AbsTol, ...
-              'MaxStep', sim.dt_max);
-% opts = odeset('RelTol', sim.RelTol, ...
-%               'AbsTol', sim.AbsTol, ...
-%               'Stats', 'on', ...
-%               'MaxStep', sim.dt_max, ...
-%               'OutputFcn', @odeProgress);
-% 
-% ---- NEW: cycle accumulators (beds & tanks) ----
-bed_cycle = init_bed_accum(sim);
-tank_cycle = init_tank_accum(sim);
-T_all = [];
-Y_all = [];
-bed_states_all = cell(num_cycles, 1);  % Store final bed states per cycle
-tank_states_all = cell(num_cycles, 1); % (optional) for tanks too
+% ODE options
+opts = odeset('RelTol', sim.RelTol, 'AbsTol', sim.AbsTol, 'MaxStep', sim.dt_max);
+
+% --- NEW: logger ---
+logger = casper_logger_start(run_name, sim);
+
+% --- storage for (optional) raw time/state ---
+T_all = []; Y_all = [];
 
 for cycle = 1:num_cycles
     fprintf('\n=== Beginning cycle %d of %d ===\n', cycle, num_cycles);
-    % ---- reset per-cycle accumulators each cycle ----
-    bed_cycle = init_bed_accum(sim);
+
+    % init per-cycle accumulators
+    bed_cycle  = init_bed_accum(sim);
     tank_cycle = init_tank_accum(sim);
+
+    % mark the start of the cycle in logger
+    logger = casper_logger_mark_cycle_start(logger, cycle, Y0);
 
     for idx = 1:length(sim.step_times)-1
         t0 = sim.step_times(idx);
         tf = sim.step_times(idx+1);
         current_step = sim.step(idx);
-        
+
         fprintf('  Cycle %d — Step %d: t = %.2f to %.2f s\n', cycle, idx, t0, tf);
-        
-        % Integration across this step
-        [Tseg, Yseg] = ode15s(@(t,Y) multi_bed_ode(t, Y, sim, current_step), ...
-                              [t0, tf], Y0, opts);
-        
-         T_all = [T_all; Tseg];
-         Y_all = [Y_all; Yseg];
-        Y0 = Yseg(end,:)';  % Update initial state for next step
-        % Boundary-only logging (cheap)
+
+        % Integrate
+        solfcn = @(t,Y) multi_bed_ode(t, Y, sim, current_step);
+        [Tseg, Yseg] = feval(sim.ode_solver, solfcn, [t0, tf], Y0, opts);
+
+        % append raw (optional)
+        T_all = [T_all; Tseg];
+        Y_all = [Y_all; Yseg];
+
+        % update state for next step
+        Y0 = Yseg(end, :)';
+
+        % light boundary logging
         beds = unpack_bed_state_vector(Y0, sim);
         for b = 1:sim.num_beds
             P = beds{b}.C .* sim.R .* beds{b}.T;
@@ -64,35 +82,47 @@ for cycle = 1:num_cycles
             sim.diagnostics(b).y1_in(end+1) = beds{b}.y(1,1);
             sim.diagnostics(b).y1_out(end+1)= beds{b}.y(end,1);
         end
-            % ---- NEW: integrate signed boundary flows over this step & print ----
-            step_flow = integrate_step_flows_signed(sim, current_step, Tseg, Yseg);
-            print_step_flow_report_signed(sim, idx, step_flow);  % neat, aligned
-            % accumulate to cycle totals
-            bed_cycle = accum_bed_signed(bed_cycle, step_flow.beds);
-            tank_cycle = accum_tank(tank_cycle, step_flow.tanks);
-            plot_diagnostics(sim, Y0);    % keep this lightweight
+
+        % ---- integrate signed boundary flows & print
+        step_flow = integrate_step_flows_signed(sim, current_step, Tseg, Yseg);
+        print_step_flow_report_signed(sim, idx, step_flow);
+
+        % accumulate to cycle totals
+        bed_cycle  = accum_bed_signed(bed_cycle, step_flow.beds);
+        tank_cycle = accum_tank(tank_cycle, step_flow.tanks);
+
+        % ---- logger: store step summaries (time histories + Y_end)
+        logger = casper_logger_step(logger, sim, idx, Tseg, Yseg, current_step, step_flow);
+
+        % plots (your lightweight function)
+        try
+            plot_diagnostics(sim, Y0);
             drawnow limitrate
+        catch
         end
-
-    % ---- End of cycle: print cycle totals (beds + tanks) ----
-    % print_cycle_totals(sim, cycle, bed_cycle, tank_cycle);
-
     end
-    bed_states_all{cycle} = unpack_bed_state_vector(Y0, sim);
-    tank_states_all{cycle} = tank_states;  % If tanks are updated per step
+
+    % end-of-cycle reporting
+    print_cycle_totals(sim, cycle, bed_cycle, tank_cycle);
+
+    % logger: add cycle summary (turn on store_profiles if you want evolution)
+    logger = casper_logger_cycle_end(logger, cycle, bed_cycle, tank_cycle, Y0, ...
+                                     false, []);  % set true,[steps] to track evolution
+end
 toc;
 
+% Optional: keep originals, plus last state
+bed_states_all{cycle}  = unpack_bed_state_vector(Y0, sim); %#ok<NASGU>
+tank_states_all{cycle} = tank_states; %#ok<NASGU>
+Y_end = Y0; %#ok<NASGU>
 
-save('cycle_sim.mat', 'sim', 'bed_states_all', 'tank_states_all');
+% legacy save (optional)
+save('cycle_sim.mat','sim','bed_states_all','tank_states_all','Y_end');
 
-fprintf('\n✅ Simulation complete. Final state saved to cycle_sim.mat\n');
+% logger save (self-contained, recommended)
+casper_logger_save(logger);
 
-
-% Example output: final concentration profile of Bed A
-% Ct_end = Y0(1:sim.num_nodes);
-% figure; plot(sim.z_nodes, Ct_end, 'LineWidth', 2);
-% xlabel('z (m)'); ylabel('Total Concentration (mol/m³)');
-% title('Final Bed A Concentration Profile'); grid on;
+fprintf('\n✅ Simulation complete.\n');
 end
 
 
@@ -106,22 +136,19 @@ end
 
 
 function S = init_bed_accum(sim)
-% Per-bed accumulators for signed boundary totals at z0 and zL
 S = struct();
 for b = 1:sim.num_beds
-    S(b).Fz0_total = 0;                    % mol (signed, +z positive)
-    S(b).FzL_total = 0;                    % mol (signed, +z positive)
+    S(b).Fz0_total = 0; S(b).FzL_total = 0;
     S(b).Fz0_species = zeros(sim.n_species,1);
     S(b).FzL_species = zeros(sim.n_species,1);
 end
 end
 
 function S = init_tank_accum(sim)
-% Per-tank totals (positive into tank, negative out of tank)
 S = struct();
 for k = 1:numel(sim.tanks)
-    S(k).name = sim.tanks(k).name;
-    S(k).n_total  = 0;                     % mol (signed; + into tank)
+    S(k).name      = sim.tanks(k).name;
+    S(k).n_total   = 0;
     S(k).n_species = zeros(sim.n_species,1);
 end
 end
@@ -366,4 +393,138 @@ function print_cycle_totals(sim, cycle_idx, bed_cycle, tank_cycle)
         fprintf('  %-14s  %14.6e    ', tank_cycle(k).name, tank_cycle(k).n_total);
         print_species_vec(tank_cycle(k).n_species, 6);
     end
+end
+% ========================= LOGGER (new) ========================= %
+
+function logger = casper_logger_start(run_name, sim)
+ts = datestr(now, 'yyyymmdd_HHMMSS');
+logger.run_info.run_name  = char(run_name);
+logger.run_info.timestamp = ts;
+logger.run_info.saved_as  = sprintf('casper_run_%s__%s.mat', run_name, ts);
+logger.sim = sim;
+
+logger.last_cycle.steps = struct([]);
+logger.last_cycle.Y_start_cycle = [];
+logger.last_cycle.cycle_index = NaN;
+
+logger.cycle_summaries = struct('cycle_index',{},'bed_cycle',{},'tank_cycle',{});
+
+logger.profile_snapshots.enabled = false;
+logger.profile_snapshots.step_indices = [];
+logger.profiles_over_cycles = struct('cycle_index',{},'step_index',{},'Y_end',{});
+end
+
+function logger = casper_logger_mark_cycle_start(logger, cycle_idx, Y0)
+logger.last_cycle.cycle_index = cycle_idx;
+logger.last_cycle.steps = struct([]);
+logger.last_cycle.Y_start_cycle = Y0(:);
+end
+
+function logger = casper_logger_step(logger, sim, step_idx, Tseg, Yseg, current_step, step_flow)
+% Store decimated boundary histories and end-of-step state for one step.
+
+    % --- Decimate to ~400 samples to keep files light ---
+    keep = max(1, floor(numel(Tseg)/400));
+    Ti = Tseg(1:keep:end);
+    Yi = Yseg(1:keep:end, :).';   % [ny x nt]
+
+    nB  = sim.num_beds;
+    nS  = sim.n_species;
+    Nt  = numel(Ti);
+
+    hist = struct();
+    hist.t = Ti(:);
+
+    % Preallocate per-bed, per-end containers
+    for b = 1:nB
+        bedlabel = sprintf('Bed%c', 'A'+b-1);
+
+        % z0
+        hist.(bedlabel).z0.P = zeros(Nt,1);
+        hist.(bedlabel).z0.T = zeros(Nt,1);
+        hist.(bedlabel).z0.u = zeros(Nt,1);
+        hist.(bedlabel).z0.n = zeros(Nt,1);
+        hist.(bedlabel).z0.y = zeros(Nt,nS);
+
+        % zL
+        hist.(bedlabel).zL.P = zeros(Nt,1);
+        hist.(bedlabel).zL.T = zeros(Nt,1);
+        hist.(bedlabel).zL.u = zeros(Nt,1);
+        hist.(bedlabel).zL.n = zeros(Nt,1);
+        hist.(bedlabel).zL.y = zeros(Nt,nS);
+    end
+
+    % Time samples
+    for k = 1:Nt
+        % Build interface states for ALL beds at this time sample
+        raw_all = cell(nB,1);
+        for bb = 1:nB
+            raw_all{bb} = get_bed_interface_props(Yi(:,k), bb, sim);
+        end
+
+        % Compute BCs for all beds at this time
+        [bc0_all, bcL_all] = flow_network(Ti(k), sim, raw_all, current_step);
+
+        % Fill per-bed histories
+        for b = 1:nB
+            bedlabel = sprintf('Bed%c', 'A'+b-1);
+            raw_b = raw_all{b};
+            bc0b  = bc0_all{b};
+            bcLb  = bcL_all{b};
+
+            % Concentration at boundary uses the RECEIVING boundary T
+            % (consistent with signed flow definitions)
+            C0 = raw_b.z0.P/(sim.R*bc0b.T);
+            CL = raw_b.zL.P/(sim.R*bcLb.T);
+
+            n0 = C0 * bc0b.u * sim.A_bed;   % mol/s (+ along +z)
+            nL = CL * bcLb.u * sim.A_bed;
+
+            % z0
+            hist.(bedlabel).z0.P(k)   = raw_b.z0.P;
+            hist.(bedlabel).z0.T(k)   = bc0b.T;
+            hist.(bedlabel).z0.u(k)   = bc0b.u;
+            hist.(bedlabel).z0.n(k)   = n0;
+            hist.(bedlabel).z0.y(k,:) = bc0b.y(:).';
+
+            % zL
+            hist.(bedlabel).zL.P(k)   = raw_b.zL.P;
+            hist.(bedlabel).zL.T(k)   = bcLb.T;
+            hist.(bedlabel).zL.u(k)   = bcLb.u;
+            hist.(bedlabel).zL.n(k)   = nL;
+            hist.(bedlabel).zL.y(k,:) = bcLb.y(:).';
+        end
+    end
+
+    % End-of-step packed state
+    Y_end = Yseg(end,:).';
+
+    % Stash into logger
+    logger.last_cycle.steps(step_idx).Tseg      = Ti;
+    logger.last_cycle.steps(step_idx).hist      = hist;
+    logger.last_cycle.steps(step_idx).Y_end     = Y_end;
+    logger.last_cycle.steps(step_idx).step_flow = step_flow;
+end
+
+function logger = casper_logger_cycle_end(logger, cycle_idx, bed_cycle, tank_cycle, Y_end, store_profiles, which_steps)
+i = numel(logger.cycle_summaries) + 1;
+logger.cycle_summaries(i).cycle_index = cycle_idx;
+logger.cycle_summaries(i).bed_cycle = bed_cycle;
+logger.cycle_summaries(i).tank_cycle = tank_cycle;
+
+if nargin>=6 && store_profiles
+    logger.profile_snapshots.enabled = true;
+    logger.profile_snapshots.step_indices = which_steps(:).';
+    for s = which_steps(:).'
+        j = numel(logger.profiles_over_cycles) + 1;
+        logger.profiles_over_cycles(j).cycle_index = cycle_idx;
+        logger.profiles_over_cycles(j).step_index  = s;
+        logger.profiles_over_cycles(j).Y_end       = Y_end(:);
+    end
+end
+end
+
+function casper_logger_save(logger)
+save(logger.run_info.saved_as, '-struct', 'logger');
+fprintf('📦 Saved run to %s\n', logger.run_info.saved_as);
 end
