@@ -14,8 +14,16 @@ function run_casper_simulation(run_name)
 %   (and your other CASPER functions)
 
 if nargin < 1 || isempty(run_name)
-    run_name = 'run';
+    run_name = strtrim(input('Enter run name (e.g. Baseline_O2N2): ', 's'));
+    if isempty(run_name), run_name = 'run'; end
 end
+% sanitize (spaces -> underscores; keep alnum, dash, underscore)
+run_name = regexprep(run_name, '\s+', '_');
+run_name = regexprep(run_name, '[^A-Za-z0-9_\-]', '_');
+
+% ensure runs/ exists
+runs_dir = 'runs';
+if ~exist(runs_dir, 'dir'), mkdir(runs_dir); end
 
 tic;
 [sim, bed_states, tank_states] = createPSASimulation();
@@ -40,6 +48,7 @@ opts = odeset('RelTol', sim.RelTol, 'AbsTol', sim.AbsTol, 'MaxStep', sim.dt_max)
 
 % --- NEW: logger ---
 logger = casper_logger_start(run_name, sim);
+sim.log_boundary_history = true;
 
 % --- storage for (optional) raw time/state ---
 T_all = []; Y_all = [];
@@ -68,9 +77,35 @@ for cycle = 1:num_cycles
         % append raw (optional)
         T_all = [T_all; Tseg];
         Y_all = [Y_all; Yseg];
+        % Keep per-step trajectories for postprocessing
+        step_struct = struct();
+        step_struct.idx  = idx;             % step number within cycle
+        step_struct.step = current_step;    % the config used
+        step_struct.Tseg = Tseg(:);
+        step_struct.Yseg = Yseg;
+
+        if ~exist('last_cycle','var') || ~isstruct(last_cycle)
+            last_cycle = struct('steps', step_struct, ...
+                'step_times', sim.step_times(:)-sim.step_times(1), ...
+                'hist', struct());
+        else
+            last_cycle.steps(end+1) = step_struct;
+        end
 
         % update state for next step
         Y0 = Yseg(end, :)';
+        if sim.log_boundary_history
+            % Store for last_cycle.hist
+            step_struct.step = current_step;
+            step_struct.Tseg = Tseg;      % keep trajectories
+            step_struct.Yseg = Yseg;
+
+            if ~exist('last_cycle','var')
+                last_cycle = struct('steps', step_struct, 'hist', struct(), 'step_times', sim.step_times(:)-sim.step_times(1));
+            else
+                last_cycle.steps(end+1) = step_struct;
+            end
+        end
 
         % light boundary logging
         beds = unpack_bed_state_vector(Y0, sim);
@@ -96,7 +131,7 @@ for cycle = 1:num_cycles
 
         % plots (your lightweight function)
         try
-            plot_diagnostics(sim, Y0);
+            % plot_diagnostics(sim, Y0);
             drawnow limitrate
         catch
         end
@@ -115,12 +150,46 @@ toc;
 bed_states_all{cycle}  = unpack_bed_state_vector(Y0, sim); %#ok<NASGU>
 tank_states_all{cycle} = tank_states; %#ok<NASGU>
 Y_end = Y0; %#ok<NASGU>
+save(run_name, 'sim', 'bed_states_all', 'tank_states_all', 'last_cycle', '-v7.3');
 
 % legacy save (optional)
 save('cycle_sim.mat','sim','bed_states_all','tank_states_all','Y_end');
 
-% logger save (self-contained, recommended)
-casper_logger_save(logger);
+% Timestamped name (from your logger)
+casper_logger_save(logger);  % keeps casper_run_<run_name>__YYYYMMDD_HHMMSS.mat
+% casper_logger_save already wrote: logger.run_info.saved_as (timestamped)
+ts_file = logger.run_info.saved_as;
+
+% Also keep convenient copies:
+non_ts_file = fullfile(runs_dir, sprintf('casper_run_%s_latest.mat', run_name));
+named_file  = fullfile(runs_dir, sprintf('casper_run_%s.mat',        run_name));
+
+% Auto-write rich report (next to the timestamped run file, in runs/)
+try
+    report_dir = 'runs';
+    if ~exist(report_dir,'dir'), mkdir(report_dir); end
+    report_file = fullfile(report_dir, sprintf('casper_report_%s__%s.txt', logger.run_info.run_name, logger.run_info.timestamp));
+    casper_write_report(sim, logger, report_file);
+catch ME
+    warning('casper:reportFail', 'Report generation failed: %s', ME.message);
+end
+
+% try/catch to avoid halting if copy fails
+try
+    copyfile(ts_file, non_ts_file);
+    copyfile(ts_file, named_file);
+    fprintf('📦 Saved copies:\n  %s\n  %s\n', non_ts_file, named_file);
+catch ME
+    warning('casper:copyFail', 'Could not copy run file to runs/: %s', ME.message);
+end
+
+% Also save convenient names:
+
+copyfile(logger.run_info.saved_as, non_ts_file);
+
+copyfile(logger.run_info.saved_as, named_file);
+
+fprintf('📦 Saved copies:\n  %s\n  %s\n', non_ts_file, named_file);
 
 fprintf('\n✅ Simulation complete.\n');
 end

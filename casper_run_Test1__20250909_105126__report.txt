@@ -1,0 +1,40 @@
+====================================================
+CASPER Simulation Report
+====================================================
+
+Run file        : \\ad.monash.edu\home\User082\pweb0008\Documents\GitHub\CASPER\runs\casper_run_Test1.mat
+Saved as        : casper_run_Test1__20250909_105126.mat
+Run name        : Test1
+Timestamp       : 20250909_105126
+
+--- Simulation Summary ---
+Simulation Name : Baseline_2bed_O2_N2 separation
+Species         : O2, N2
+Beds            : 2
+Cycle time (s)  : 200
+Averaged cycles : last 1 cycle(s)
+
+--- Tanks ---
+Feed tank       : Feed_Tank
+Product tank    : Product_Tank
+
+--- Product Totals (over selected cycles) ---
+Total to Product (mol) : 2.350288e+00
+Avg Product Flow (mol/s): 1.175144e-02
+Species to Product (mol):
+  O2     : 5.365257e-01
+  N2     : 1.813763e+00
+
+--- Product Purity (%) ---
+  O2     :  22.828 %
+  N2     :  77.172 %
+
+--- Component Recoveries (% of feed-in) ---
+  O2     :  77.421 %
+  N2     :  69.573 %
+
+Headline species: O2
+  Purity   :  22.828 %
+  Recovery :  77.421 %
+
+--- Last Cycle: Steps present = 8 (decimated histories)

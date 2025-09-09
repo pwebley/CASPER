@@ -1,11 +1,14 @@
-function casper_visualize_last_cycle(matfile)
+function casper_visualize_last_cycle(runfile)
 % Plot spatial profiles at the end of each step of the LAST cycle.
 % - Pressure & Temperature: one figure per bed (overlaid by step)
 % - Mole fractions: one figure per (bed, species) using species names
 % - Loadings:      one figure per (bed, species) using species names
 % - Total loading: one figure per bed
+if nargin < 1 || isempty(runfile)
+    runfile = casper_choose_runfile('runs','casper_run_*.mat');
+end
+S = load(runfile);
 
-S = load(matfile);
 sim     = S.sim;
 steps   = S.last_cycle.steps;
 nS      = sim.n_species;

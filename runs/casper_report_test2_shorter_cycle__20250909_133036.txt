@@ -1,0 +1,298 @@
+====================================================
+CASPER Simulation Report (rich)
+====================================================
+
+Run name        : test2_shorter_cycle
+Timestamp       : 20250909_133036
+Saved run file  : casper_run_test2_shorter_cycle__20250909_133036.mat
+
+--- INPUT SUMMARY ---
+Simulation Name : Baseline_2bed_O2_N2 separation
+Species         : O2, N2
+Beds            : 2
+Cycle time (s)  : 140
+Bed diameter (m): 0.05
+Total length (m): 1
+Total nodes     : 20
+Product tank    : Product_Tank
+Feed tank       : Feed_Tank
+
+Gases (MW, Cp):
+  O2      MW=32 kg/mol  Cp=29.4 J/mol/K
+  N2      MW=28.01 kg/mol  Cp=29.1 J/mol/K
+
+Layers / Adsorbents:
+  Layer 1: Zeolite5A_1  L=1 m  N=20  nodes[1..20]
+    void_fraction: 0.3500
+    bed_density (kg/m^3): 650
+    heat_capacity (J/kg/K): 1000
+    particle_diameter (m): 0.0016
+
+--- LAST CYCLE STEP-BY-STEP ---
+Steps: 8
+
+Step 1
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0    9.000000e-01    [1.890000e-01 7.110000e-01]
+  BedA    zL    7.972094e-01    [4.714618e-01 3.257476e-01]
+  BedB    z0   -6.287171e-02    [-9.148386e-03 -5.372333e-02]
+  BedB    zL    0.000000e+00    [0.000000e+00 0.000000e+00]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank        -9.000000e-01    [-1.890000e-01 -7.110000e-01]
+  Product_Tank      7.972094e-01    [4.714618e-01 3.257476e-01]
+  Vent_Tank         6.287171e-02    [9.148386e-03 5.372333e-02]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[-3.438782e-01 2.541935e-01]
+     NetIn:[-2.824618e-01 3.852524e-01]
+    Resid.:[6.141641e-02 1.310590e-01]
+  Bed B: || ΔStore:[-1.087598e-02 -5.282815e-02]
+     NetIn:[-9.148386e-03 -5.372333e-02]
+    Resid.:[1.727596e-03 -8.951746e-04]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=298.2 K   P=476858 Pa   y=[2.100169e-01 7.899831e-01]
+    Node N:  T=313.1 K   P=475513 Pa   y=[2.518982e-01 7.481018e-01]
+  Bed B:
+    Node 1:  T=275.9 K   P=99934.1 Pa   y=[1.407267e-01 8.592733e-01]
+    Node N:  T=291 K   P=99934.1 Pa   y=[1.262208e-01 8.737792e-01]
+
+Step 2
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0    4.500000e-01    [9.450000e-02 3.555000e-01]
+  BedA    zL    4.453547e-01    [9.967838e-02 3.456763e-01]
+  BedB    z0   -4.191291e-02    [-5.913638e-03 -3.599928e-02]
+  BedB    zL   -4.795273e-02    [-1.073265e-02 -3.722008e-02]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank        -4.500000e-01    [-9.450000e-02 -3.555000e-01]
+  Product_Tank      4.453547e-01    [9.967838e-02 3.456763e-01]
+  Vent_Tank         4.191291e-02    [5.913638e-03 3.599928e-02]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[-6.458821e-03 7.003460e-03]
+     NetIn:[-5.178385e-03 9.823661e-03]
+    Resid.:[1.280436e-03 2.820201e-03]
+  Bed B: || ΔStore:[4.802423e-03 -2.990413e-04]
+     NetIn:[4.819015e-03 1.220805e-03]
+    Resid.:[1.659250e-05 1.519846e-03]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=298.2 K   P=477327 Pa   y=[2.100054e-01 7.899946e-01]
+    Node N:  T=313 K   P=475979 Pa   y=[2.125566e-01 7.874434e-01]
+  Bed B:
+    Node 1:  T=276.1 K   P=101150 Pa   y=[1.409655e-01 8.590345e-01]
+    Node N:  T=290.9 K   P=101518 Pa   y=[2.094105e-01 7.905895e-01]
+
+Step 3
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedA    zL    2.972532e-01    [6.046158e-02 2.367916e-01]
+  BedB    z0    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedB    zL   -3.096673e-01    [-6.302157e-02 -2.466457e-01]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank         0.000000e+00    [0.000000e+00 0.000000e+00]
+  Product_Tank      0.000000e+00    [0.000000e+00 0.000000e+00]
+  Vent_Tank         0.000000e+00    [0.000000e+00 0.000000e+00]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[-8.355401e-02 -2.320218e-01]
+     NetIn:[-6.046158e-02 -2.367916e-01]
+    Resid.:[2.309243e-02 -4.769844e-03]
+  Bed B: || ΔStore:[7.524138e-02 2.365307e-01]
+     NetIn:[6.302157e-02 2.466457e-01]
+    Resid.:[-1.221981e-02 1.011500e-02]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=290.1 K   P=277034 Pa   y=[1.935928e-01 8.064072e-01]
+    Node N:  T=304.7 K   P=275873 Pa   y=[1.919370e-01 8.080630e-01]
+  Bed B:
+    Node 1:  T=285.1 K   P=212056 Pa   y=[1.764287e-01 8.235713e-01]
+    Node N:  T=301.5 K   P=213542 Pa   y=[1.976072e-01 8.023928e-01]
+
+Step 4
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0   -4.114131e-01    [-7.175932e-02 -3.396537e-01]
+  BedA    zL    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedB    z0    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedB    zL   -3.680333e-01    [-3.680333e-01 0.000000e+00]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank         0.000000e+00    [0.000000e+00 0.000000e+00]
+  Product_Tank     -3.680333e-01    [-3.680333e-01 0.000000e+00]
+  Vent_Tank         4.114131e-01    [7.175932e-02 3.396537e-01]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[-9.047056e-02 -3.344451e-01]
+     NetIn:[-7.175932e-02 -3.396537e-01]
+    Resid.:[1.871123e-02 -5.208657e-03]
+  Bed B: || ΔStore:[4.569578e-01 1.228815e-01]
+     NetIn:[3.680333e-01 0.000000e+00]
+    Resid.:[-8.892456e-02 -1.228815e-01]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=277.8 K   P=115103 Pa   y=[1.502329e-01 8.497671e-01]
+    Node N:  T=293.3 K   P=115761 Pa   y=[1.376640e-01 8.623360e-01]
+  Bed B:
+    Node 1:  T=297.3 K   P=450361 Pa   y=[2.051074e-01 7.948926e-01]
+    Node N:  T=296.1 K   P=450361 Pa   y=[9.604531e-01 3.954688e-02]
+
+Step 5
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0   -6.234636e-02    [-9.077706e-03 -5.326865e-02]
+  BedA    zL    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedB    z0    1.200000e+00    [2.520000e-01 9.480000e-01]
+  BedB    zL    1.093604e+00    [5.403664e-01 5.532372e-01]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank        -1.200000e+00    [-2.520000e-01 -9.480000e-01]
+  Product_Tank      1.093604e+00    [5.403664e-01 5.532372e-01]
+  Vent_Tank         6.234636e-02    [9.077706e-03 5.326865e-02]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[-1.088869e-02 -5.286882e-02]
+     NetIn:[-9.077706e-03 -5.326865e-02]
+    Resid.:[1.810986e-03 -3.998320e-04]
+  Bed B: || ΔStore:[-3.513376e-01 2.606423e-01]
+     NetIn:[-2.883664e-01 3.947628e-01]
+    Resid.:[6.297119e-02 1.341204e-01]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=275.9 K   P=99928.2 Pa   y=[1.407756e-01 8.592244e-01]
+    Node N:  T=291.4 K   P=99928.2 Pa   y=[1.260767e-01 8.739233e-01]
+  Bed B:
+    Node 1:  T=298.2 K   P=477265 Pa   y=[2.100071e-01 7.899929e-01]
+    Node N:  T=312.9 K   P=475918 Pa   y=[2.163267e-01 7.836733e-01]
+
+Step 6
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0   -4.181529e-02    [-5.902580e-03 -3.591271e-02]
+  BedA    zL   -4.797377e-02    [-1.018733e-02 -3.778644e-02]
+  BedB    z0    4.500000e-01    [9.450000e-02 3.555000e-01]
+  BedB    zL    4.471357e-01    [9.494992e-02 3.521857e-01]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank        -4.500000e-01    [-9.450000e-02 -3.555000e-01]
+  Product_Tank      4.471357e-01    [9.494992e-02 3.521857e-01]
+  Vent_Tank         4.181529e-02    [5.902580e-03 3.591271e-02]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[4.271231e-03 3.096831e-04]
+     NetIn:[4.284749e-03 1.873732e-03]
+    Resid.:[1.351764e-05 1.564049e-03]
+  Bed B: || ΔStore:[-5.782568e-04 3.025476e-03]
+     NetIn:[-4.499221e-04 3.314266e-03]
+    Resid.:[1.283346e-04 2.887901e-04]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=276.1 K   P=101149 Pa   y=[1.410404e-01 8.589596e-01]
+    Node N:  T=291.3 K   P=101518 Pa   y=[2.042448e-01 7.957552e-01]
+  Bed B:
+    Node 1:  T=298.2 K   P=477304 Pa   y=[2.100036e-01 7.899964e-01]
+    Node N:  T=312.2 K   P=475957 Pa   y=[2.108927e-01 7.891073e-01]
+
+Step 7
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedA    zL   -3.088873e-01    [-6.266702e-02 -2.462203e-01]
+  BedB    z0    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedB    zL    2.975396e-01    [6.033344e-02 2.372062e-01]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank         0.000000e+00    [0.000000e+00 0.000000e+00]
+  Product_Tank      0.000000e+00    [0.000000e+00 0.000000e+00]
+  Vent_Tank         0.000000e+00    [0.000000e+00 0.000000e+00]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[7.509112e-02 2.368658e-01]
+     NetIn:[6.266702e-02 2.462203e-01]
+    Resid.:[-1.242410e-02 9.354528e-03]
+  Bed B: || ΔStore:[-8.339054e-02 -2.323411e-01]
+     NetIn:[-6.033344e-02 -2.372062e-01]
+    Resid.:[2.305710e-02 -4.865118e-03]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=285.1 K   P=212187 Pa   y=[1.765540e-01 8.234460e-01]
+    Node N:  T=301.7 K   P=213673 Pa   y=[1.974228e-01 8.025772e-01]
+  Bed B:
+    Node 1:  T=290 K   P=277017 Pa   y=[1.935919e-01 8.064081e-01]
+    Node N:  T=303.9 K   P=275858 Pa   y=[1.917843e-01 8.082157e-01]
+
+Step 8
+---------
+Boundary moles (signed integrals over step):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0    0.000000e+00    [0.000000e+00 0.000000e+00]
+  BedA    zL   -3.675946e-01    [-3.675946e-01 0.000000e+00]
+  BedB    z0   -4.117292e-01    [-7.181753e-02 -3.399117e-01]
+  BedB    zL    0.000000e+00    [0.000000e+00 0.000000e+00]
+
+Tank moles (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank         0.000000e+00    [0.000000e+00 0.000000e+00]
+  Product_Tank     -3.675946e-01    [-3.675946e-01 0.000000e+00]
+  Vent_Tank         4.117292e-01    [7.181753e-02 3.399117e-01]
+
+Per-bed mass balance (species): Net_in - ΔStorage [should ≈ 0]
+  Bed A: || ΔStore:[4.559830e-01 1.225494e-01]
+     NetIn:[3.675946e-01 0.000000e+00]
+    Resid.:[-8.838844e-02 -1.225494e-01]
+  Bed B: || ΔStore:[-9.043661e-02 -3.343423e-01]
+     NetIn:[-7.181753e-02 -3.399117e-01]
+    Resid.:[1.861908e-02 -5.569411e-03]
+
+End-of-step internal nodes (not faces): node#1 and node#end
+  Bed A:
+    Node 1:  T=297.3 K   P=450013 Pa   y=[2.051292e-01 7.948708e-01]
+    Node N:  T=296.3 K   P=450013 Pa   y=[9.604272e-01 3.957278e-02]
+  Bed B:
+    Node 1:  T=277.8 K   P=115213 Pa   y=[1.503279e-01 8.496721e-01]
+    Node N:  T=292.5 K   P=115875 Pa   y=[1.382650e-01 8.617350e-01]
+
+--- LAST CYCLE TOTALS ---
+Beds (signed totals):
+  Bed     End     Total (mol)    Species (mol)
+  BedA    z0    8.344253e-01    [1.967604e-01 6.376649e-01]
+  BedA    zL    8.153617e-01    [1.911529e-01 6.242088e-01]
+  BedB    z0    1.133486e+00    [2.596204e-01 8.738657e-01]
+  BedB    zL    1.112626e+00    [2.538622e-01 8.587634e-01]
+
+  Tanks (positive = into tank):
+  Tank               Total (mol)    Species (mol)
+  Feed_Tank        -3.000000e+00    [-6.300000e-01 -2.370000e+00]
+  Product_Tank      2.047676e+00    [4.708287e-01 1.576847e+00]
+  Vent_Tank         1.032089e+00    [1.736192e-01 8.584694e-01]
+
+====================================================
+End of report
+====================================================

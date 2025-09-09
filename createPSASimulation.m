@@ -1,13 +1,15 @@
 function [sim, bed_states, tank_states] = createPSASimulation()
-% CREATEPSASIMULATION Initializes the PSA simulation configuration and states.
+% CREATEPSASIMULATION Initializes the TSA/PSA simulation configuration and states.
 % Includes optional restart from previous simulation data.
 
 %% === General Simulation Settings ===
-sim.n_cycles = 2;
-sim.cycle_time = 200;
-sim.num_beds = 2;
+sim.name = '1-bed DAC Simulation with Lewatit';
+sim.date_run = datestr(now, 'yyyy-mm-dd HH:MM:SS');
 
-sim.species_names = {'O2', 'N2'};
+sim.n_cycles = 2;
+sim.num_beds = 1;
+
+sim.species_names = {'CO2','H2O', 'N2'};
 sim.n_species = numel(sim.species_names);
 sim.species_index = containers.Map(sim.species_names, 1:sim.n_species);
 sim.R = 8.314462618;
@@ -32,14 +34,14 @@ for i = 1:sim.n_species
 end
 
 %% === Bed & Layer Configuration ===
-sim.bed_diameter = 0.05;
+sim.bed_diameter = 0.1;
 sim.n_layers = 1;
-sim.layers(1).length = 1.0;
+sim.layers(1).length = 0.06;
 sim.layers(1).num_nodes = 20;
 sim.Ergun_A_face = ones(sim.layers(1).num_nodes+1,1);
 sim.Ergun_B_face = ones(sim.layers(1).num_nodes+1,1);
 
-sim.layers(1).adsorbent_name = 'Zeolite5A_1';
+sim.layers(1).adsorbent_name = 'Lewatit VP OC 1065';
 sim.bed_length = sum([sim.layers.length]);
 sim.num_nodes = sum([sim.layers.num_nodes]);
 
@@ -172,10 +174,16 @@ sim.tanks(3).type = 'infinite';
 sim.tanks(3).P = 1e5;
 sim.tanks(3).T = 298.15;
 sim.tanks(3).y = [0.0,  1.0];
+
+% --- Reporting helpers ---
+sim.product_tank_name = 'Product_Tank';   % must match sim.tanks(k).name
+sim.feed_tank_name    = 'Feed_Tank';      % ditto
+sim.primary_product_species = 'O2';       % optional, used for headline metrics
+
 %% === CYCLE DEFINITION ===
 % Define the duration of each step in the cycle
-sim.step_times = [0, 40, 55, 60, 75, 115, 130, 135, 150]; % 8 steps
-
+sim.step_times = [0, 30, 45, 50, 65, 105, 120, 125, 140]; % 8 steps
+sim.cycle_time = sim.step_times(end) - sim.step_times(1);
 % Pre-allocate a structure array for steps
 sim.step(1:8) = struct(); % For an 8-step cycle
 
